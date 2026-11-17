@@ -80,6 +80,7 @@ Se un dato viene letto male, sotto le foto c'è **Mostra testo letto** con quell
 Tutti gli utenti creati nella sezione Utenti compaiono nell'elenco di Schede allenamento. Toccando un utente si aprono le sue schede:
 
 - **+ / Crea** aggiunge una scheda (nome, data, note, esercizi con serie, ripetizioni e carico in kg).
+- Nel modulo, il pulsante **SS** davanti a un esercizio lo mette in **superserie** con quello sopra; si possono collegare due o più esercizi. Nel dettaglio e nel download le superserie sono segnate con SS A, SS B…
 - **− / Elimina** attiva la selezione e, dopo conferma, elimina le schede scelte.
 - Toccando una scheda si vede il dettaglio e si può **scaricare** come pagina HTML (apribile e stampabile come PDF). La più recente è segnata come "attuale", le altre sono lo storico.
 - Sotto le schede c'è il campo di ricerca esercizi: si scelgono fino a 4 esercizi e il grafico mostra come cambia il carico massimo scheda dopo scheda.

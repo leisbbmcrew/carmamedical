@@ -113,7 +113,11 @@ h2{font-size:22px;margin:0 0 4px}
 .chart polyline{fill:none;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
 .leg{display:flex;flex-direction:column;gap:4px;margin-top:8px;font-size:14px}
 .mbox.wide{max-width:560px}
-.exr{display:grid;grid-template-columns:1.7fr .7fr .7fr .8fr auto;gap:6px;align-items:center}
+.exr{display:grid;grid-template-columns:auto 1.7fr .7fr .7fr .8fr auto;gap:6px;align-items:center}
+.lkb{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px;width:34px;height:36px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;padding:0}
+.lkb:disabled{opacity:.35;cursor:default}
+.exr.lk .lkb{background:var(--brand);border-color:var(--brand);color:#fff}
+.exr.grp{border-left:3px solid var(--brand);padding-left:6px;margin-left:-9px}
 .exr input{padding:8px;min-width:0}
 .xr{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:8px;width:32px;height:36px;font-size:18px;cursor:pointer}
 .addx{align-self:flex-start;border:1px dashed var(--brand);background:none;color:var(--brand);border-radius:10px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
@@ -498,12 +502,12 @@ document.addEventListener('click',function(e){
 });
 // ---- Schede allenamento (struttura provvisoria: nome, data, note, elenco esercizi con serie, ripetizioni e carico) ----
 var EXLIST=['Panca piana','Squat','Stacco da terra','Military press','Rematore con bilanciere','Trazioni','Lat machine','Leg press','Curl con bilanciere','Pushdown ai cavi','Affondi','Plank'];
-function mkS(id,u,nome,data,es){return {id:'d'+id,uid:String(u),nome:nome,data:data,note:'',es:es.map(function(x){return {n:x[0],s:x[1],r:x[2],k:x[3]}})}}
+function mkS(id,u,nome,data,es){return {id:'d'+id,uid:String(u),nome:nome,data:data,note:'',es:es.map(function(x){return {n:x[0],s:x[1],r:x[2],k:x[3],g:x[4]}})}}
 var SCH=[
  mkS(1,1,'Forza base','2026-05-10',[['Panca piana',3,8,60],['Squat',3,8,80],['Rematore con bilanciere',3,10,50]]),
  mkS(2,1,'Forza base 2','2026-07-12',[['Panca piana',3,8,65],['Squat',3,8,87.5],['Rematore con bilanciere',3,10,55]]),
  mkS(3,1,'Ipertrofia','2026-09-14',[['Panca piana',4,8,70],['Squat',4,8,92.5],['Rematore con bilanciere',4,10,60]]),
- mkS(4,1,'Ipertrofia 2','2026-11-02',[['Panca piana',4,8,72.5],['Squat',4,8,97.5],['Rematore con bilanciere',4,10,62.5]])
+ mkS(4,1,'Ipertrofia 2','2026-11-02',[['Panca piana',4,8,72.5,1],['Rematore con bilanciere',4,10,62.5,1],['Squat',4,8,97.5]])
 ];
 var dbSch=null, sq='', suid=null, sdm=false, ssel={}, trend=[], eq='';
 var TCOL=['var(--c1)','var(--c2)','var(--c3)','var(--c4)'];
@@ -587,20 +591,30 @@ function drawTrend(){
     else{var dl=b.v-a.v,pc=a.v>0?Math.round(dl/a.v*1000)/10:0;t=fnum(a.v)+' → '+fnum(b.v)+' kg ('+(dl>=0?'+':'')+fnum(Math.round(dl*10)/10)+' kg, '+(pc>=0?'+':'')+fnum(pc)+'%)'}
     return '<span><i class="dot" style="background:'+s.color+'"></i><b>'+esc(s.name)+'</b>: '+t+'</span>'}).join('')+'</div>';
 }
-function exRow(n,s,r,k){return '<div class="exr"><input class="ex_n" list="exlist" placeholder="Esercizio" value="'+esc(n||'')+'"><input class="ex_s" type="number" min="0" inputmode="numeric" placeholder="Serie"><input class="ex_r" type="number" min="0" inputmode="numeric" placeholder="Rip."><input class="ex_k" type="number" min="0" step="0.5" inputmode="decimal" placeholder="Kg"><button class="xr" data-act="rmex" aria-label="Rimuovi">×</button></div>'}
+function exRow(n,s,r,k){return '<div class="exr"><button class="lkb" data-act="lk" aria-label="Superserie con l’esercizio sopra" title="Superserie con l’esercizio sopra">SS</button><input class="ex_n" list="exlist" placeholder="Esercizio" value="'+esc(n||'')+'"><input class="ex_s" type="number" min="0" inputmode="numeric" placeholder="Serie"><input class="ex_r" type="number" min="0" inputmode="numeric" placeholder="Rip."><input class="ex_k" type="number" min="0" step="0.5" inputmode="decimal" placeholder="Kg"><button class="xr" data-act="rmex" aria-label="Rimuovi">×</button></div>'}
+function refreshEx(){
+  var rows=[].slice.call(document.querySelectorAll('#exs .exr'));
+  rows.forEach(function(r,i){
+    if(i===0)r.classList.remove('lk');
+    r.querySelector('.lkb').disabled=(i===0);
+    r.classList.toggle('grp',r.classList.contains('lk')||!!(rows[i+1]&&rows[i+1].classList.contains('lk')));
+  });
+}
+function exLabel(e){return (e.g?'<i class="dc">SS '+String.fromCharCode(64+(+e.g))+'</i> ':'')+esc(e.n)}
 function schedaForm(){
   var names=EXLIST.slice();Object.keys(exNames(suid)).forEach(function(k){var n=exNames(suid)[k];if(EXLIST.map(ekey).indexOf(k)<0)names.push(n)});
   modal('<h3>Nuova scheda</h3><label>Nome scheda *<input id="sc_n" type="text" placeholder="es. Forza, mese 1"></label><label>Data<input id="sc_d" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label><label>Note<input id="sc_note" type="text"></label>'+
-   '<b style="font-size:14px">Esercizi</b><div id="exs" style="display:flex;flex-direction:column;gap:6px">'+exRow()+exRow()+exRow()+'</div><button class="addx" data-act="addex">+ Aggiungi esercizio</button>'+
+   '<b style="font-size:14px">Esercizi</b><div class="status">Tocca SS per mettere un esercizio in superserie con quello sopra (puoi collegarne più di due).</div><div id="exs" style="display:flex;flex-direction:column;gap:6px">'+exRow()+exRow()+exRow()+'</div><button class="addx" data-act="addex">+ Aggiungi esercizio</button>'+
    '<datalist id="exlist">'+names.map(function(n){return '<option value="'+esc(n)+'">'}).join('')+'</datalist>'+
    '<div class="status" id="scstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="scsave" data-act="smsave">Salva</button></div>');
-  document.querySelector('#modal .mbox').classList.add('wide');
+  document.querySelector('#modal .mbox').classList.add('wide');refreshEx();
 }
 function num(v){return v===''||v==null||isNaN(+v)?'':+v}
 async function saveScheda(){
   var nome=document.getElementById('sc_n').value.trim();
   if(!nome){document.getElementById('sc_n').focus();return}
-  var es=[].map.call(document.querySelectorAll('#exs .exr'),function(r){return {n:r.querySelector('.ex_n').value.trim(),s:num(r.querySelector('.ex_s').value),r:num(r.querySelector('.ex_r').value),k:num(r.querySelector('.ex_k').value)}}).filter(function(x){return x.n});
+  var es=[].map.call(document.querySelectorAll('#exs .exr'),function(r){return {n:r.querySelector('.ex_n').value.trim(),s:num(r.querySelector('.ex_s').value),r:num(r.querySelector('.ex_r').value),k:num(r.querySelector('.ex_k').value),lk:r.classList.contains('lk')}}).filter(function(x){return x.n});
+  var gn=0;es.forEach(function(x,i){if(x.lk&&i>0){if(!es[i-1].g)es[i-1].g=++gn;x.g=es[i-1].g}});es.forEach(function(x){delete x.lk});
   if(!es.length){st('scstat','Aggiungi almeno un esercizio.');return}
   var o={uid:String(suid),nome:nome,data:document.getElementById('sc_d').value||new Date().toISOString().slice(0,10),note:document.getElementById('sc_note').value.trim(),es:es,ts:Date.now()};
   var b=document.getElementById('scsave');b.disabled=true;b.textContent='Salvataggio…';
@@ -610,12 +624,12 @@ async function saveScheda(){
 function viewScheda(id){
   var sc=findS(id);if(!sc)return;var u=find(sc.uid);
   modal('<h3>'+esc(sc.nome)+'</h3><div class="status">'+(u?esc(u.n+' '+u.c)+' · ':'')+fdate(sc.data)+'</div>'+
-   '<table class="stab"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Kg</th></tr></thead><tbody>'+sc.es.map(function(e){return '<tr><td>'+esc(e.n)+'</td><td>'+esc(e.s)+'</td><td>'+esc(e.r)+'</td><td>'+esc(fnum(e.k))+'</td></tr>'}).join('')+'</tbody></table>'+(sc.note?'<p class="status">'+esc(sc.note)+'</p>':'')+
+   '<table class="stab"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Kg</th></tr></thead><tbody>'+sc.es.map(function(e){return '<tr><td>'+exLabel(e)+'</td><td>'+esc(e.s)+'</td><td>'+esc(e.r)+'</td><td>'+esc(fnum(e.k))+'</td></tr>'}).join('')+'</tbody></table>'+(sc.note?'<p class="status">'+esc(sc.note)+'</p>':'')+
    '<div class="status" id="sdstat"></div><div class="mrow"><button data-act="mclose">Chiudi</button><button class="pri" data-act="sdl" data-id="'+esc(sc.id)+'">Scarica</button></div>');
 }
 function schedaHtml(u,sc){
-  return '<!doctype html><html lang="it"><head><meta charset="utf-8"><title>'+esc(sc.nome)+'</title><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 16px;color:#12302b}h1{margin:4px 0}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #cfdcd9;padding:8px 10px;text-align:left}th{background:#eaf4f2}.m{color:#5d7872;margin:0}</style></head><body><p class="m">Carma Medical Wellness</p><h1>'+esc(sc.nome)+'</h1><p class="m">'+esc(u?u.n+' '+u.c:'')+' · '+fdate(sc.data)+'</p><table><thead><tr><th>Esercizio</th><th>Serie</th><th>Ripetizioni</th><th>Carico (kg)</th></tr></thead><tbody>'+
-   sc.es.map(function(e){return '<tr><td>'+esc(e.n)+'</td><td>'+esc(e.s)+'</td><td>'+esc(e.r)+'</td><td>'+esc(fnum(e.k))+'</td></tr>'}).join('')+'</tbody></table>'+(sc.note?'<p>'+esc(sc.note)+'</p>':'')+'</body></html>';
+  return '<!doctype html><html lang="it"><head><meta charset="utf-8"><title>'+esc(sc.nome)+'</title><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 16px;color:#12302b}h1{margin:4px 0}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #cfdcd9;padding:8px 10px;text-align:left}th{background:#eaf4f2}.m{color:#5d7872;margin:0}.dc{font-style:normal;font-size:11px;font-weight:600;color:#0f766e;background:#d9f0ec;border-radius:99px;padding:1px 8px;margin-right:4px}</style></head><body><p class="m">Carma Medical Wellness</p><h1>'+esc(sc.nome)+'</h1><p class="m">'+esc(u?u.n+' '+u.c:'')+' · '+fdate(sc.data)+'</p><table><thead><tr><th>Esercizio</th><th>Serie</th><th>Ripetizioni</th><th>Carico (kg)</th></tr></thead><tbody>'+
+   sc.es.map(function(e){return '<tr><td>'+exLabel(e)+'</td><td>'+esc(e.s)+'</td><td>'+esc(e.r)+'</td><td>'+esc(fnum(e.k))+'</td></tr>'}).join('')+'</tbody></table>'+(sc.note?'<p>'+esc(sc.note)+'</p>':'')+'</body></html>';
 }
 async function saveBlob(blob,name){
   try{
@@ -653,8 +667,9 @@ document.addEventListener('click',function(e){
   if(a){var k=a.getAttribute('data-act'),ex=a.getAttribute('data-ex');
     if(k==='sback'){suid=null;sdm=false;ssel={};trend=[];eq='';renderSchede()}
     else if(k==='sadd')schedaForm();
-    else if(k==='addex')document.getElementById('exs').insertAdjacentHTML('beforeend',exRow());
-    else if(k==='rmex'){var r=a.closest('.exr');if(r&&document.querySelectorAll('#exs .exr').length>1)r.remove()}
+    else if(k==='addex'){document.getElementById('exs').insertAdjacentHTML('beforeend',exRow());refreshEx()}
+    else if(k==='lk'){var rw=a.closest('.exr');if(rw){rw.classList.toggle('lk');refreshEx()}}
+    else if(k==='rmex'){var r=a.closest('.exr');if(r&&document.querySelectorAll('#exs .exr').length>1){r.remove();refreshEx()}}
     else if(k==='smsave')saveScheda();
     else if(k==='sdel'){sdm=!sdm;ssel={};listSchede()}
     else if(k==='scancel'){sdm=false;ssel={};listSchede()}
