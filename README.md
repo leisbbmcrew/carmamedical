@@ -8,7 +8,7 @@ App di gestione palestra. Questa versione contiene la **home** con le sezioni pr
 |---|---|---|
 | Utenti | Elenco con anagrafica, ricerca, creazione ed eliminazione | Disponibile |
 | Schede allenamento | Elenco utenti; per ogni utente crea ed elimina schede, storico con download e andamento degli esercizi | Disponibile (struttura delle schede provvisoria) |
-| Calendario | Corsi, appuntamenti e prenotazioni | Da sviluppare |
+| Calendario | Viste giorno, settimana, mese e anno; lezioni e accessi con gli utenti assegnati alle fasce orarie | Disponibile |
 | Eventi | Open day, workshop e iniziative | Da sviluppare |
 
 ## Visualizzazione
@@ -51,7 +51,8 @@ Per pubblicarlo online: su GitHub, **Settings → Pages**, scegliere il branch `
 ## Prossimi passi
 
 - Sviluppare la scheda Utenti
-- Sviluppare Schede allenamento, Calendario ed Eventi
+- Sviluppare Eventi
+- Salvataggio permanente di utenti, schede e calendario (database)
 - Attivare il login
 
 ## Documento d'identità (scheda Utenti)
@@ -86,3 +87,25 @@ Tutti gli utenti creati nella sezione Utenti compaiono nell'elenco di Schede all
 - Sotto le schede c'è il campo di ricerca esercizi: si scelgono fino a 4 esercizi e il grafico mostra come cambia il carico massimo scheda dopo scheda.
 
 La struttura delle schede è provvisoria e da definire. Cancellando un utente si cancellano anche le sue schede.
+
+## Calendario
+
+Quattro viste, che si cambiano dai pulsanti **Giorno / Settimana / Mese / Anno**; con ‹ e › si scorre, con **Oggi** si torna a oggi. La settimana inizia di lunedì.
+
+- **Giorno:** timeline oraria sulle 24 ore come nel calendario Apple, con la striscia dei giorni della settimana in alto e la linea rossa dell'ora attuale. Le voci che si sovrappongono sono affiancate.
+- **Settimana:** sette colonne con la stessa timeline; toccando il numero di un giorno si apre la vista Giorno.
+- **Mese:** griglia del mese con i punti colorati delle voci (su tablet i titoli); toccando un giorno si vede l'elenco sotto, toccandolo ancora (o con **Apri giorno**) si apre la vista Giorno.
+- **Anno:** i dodici mesi; i giorni con voci sono evidenziati. Toccando il nome del mese si apre il mese, toccando un giorno si apre il giorno.
+
+**Voci del calendario.** Ogni voce ha tipo (*Lezione / evento* oppure *Accesso libero in palestra*), titolo, data, ora di inizio e fine, colore, note e **gli utenti assegnati**. Nella stessa fascia possono esserci più utenti e più voci insieme. Si crea con **+ / Crea** oppure toccando una fascia vuota della timeline; toccando una voce si modifica o si elimina. Nel modulo c'è un elenco degli utenti caricati, con ricerca; se un utente è già assegnato a un'altra voce nello stesso orario compare un avviso (si può salvare comunque).
+
+**Spostare le voci (giorno e settimana).**
+
+- **Touch:** tieni premuta la voce per un attimo (il telefono vibra) e trascinala; l'orario si aggiorna mentre ti muovi, con scatti di 15 minuti. Se scorri senza tenere premuto, la pagina scorre normalmente e la voce resta ferma.
+- **Mouse:** trascina direttamente la voce.
+- Nella settimana si può trascinare anche su un altro giorno.
+- Il trattino in fondo alla voce permette di cambiare la durata.
+- Vicino al bordo alto o basso della timeline, la pagina scorre da sola durante il trascinamento.
+- Gli utenti assegnati si spostano insieme alla voce.
+
+Se si elimina un utente, viene tolto anche da tutte le voci del calendario. Come per utenti e schede, fuori da claude.ai le voci restano in memoria fino al ricaricamento della pagina: all'apertura compaiono alcune voci di esempio, da cancellare quando non servono più.
