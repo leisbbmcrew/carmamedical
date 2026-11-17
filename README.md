@@ -110,12 +110,24 @@ Quattro viste, che si cambiano dai pulsanti **Giorno / Settimana / Mese / Anno**
 
 Se si elimina un utente, viene tolto anche da tutte le voci del calendario. Come per utenti e schede, fuori da claude.ai le voci restano in memoria fino al ricaricamento della pagina: all'apertura compaiono alcune voci di esempio, da cancellare quando non servono più.
 
-## Menu dell'utente e Ingressi
+## Menu dell'utente
 
 Toccando un utente nell'elenco (scheda Utenti) si apre un menu con tre voci:
 
 - **Anagrafica:** i dati personali e il documento d'identità salvato.
 - **Scheda allenamento:** apre direttamente le schede di quell'utente.
-- **Ingressi:** la scheda ingressi dell'utente. In alto ci sono tre riquadri (ingressi del mese, totale, data dell'ultimo ingresso), poi l'elenco con data, ora di ingresso e di uscita e durata. Con **+ / Crea** si registra un ingresso (data e ora sono già quelle di adesso; l'uscita è facoltativa e si può aggiungere dopo toccando la riga), con **− / Elimina** si selezionano e cancellano più ingressi. In fondo, **Prenotazioni in calendario** elenca le prossime voci a cui l'utente è assegnato; toccandone una si apre quel giorno nel Calendario.
+- **Ingressi:** pacchetti di lezioni e registro degli ingressi dell'utente.
 
-Cancellando un utente si cancellano anche i suoi ingressi. Come per le altre sezioni, fuori da claude.ai gli ingressi restano in memoria fino al ricaricamento della pagina; all'apertura ce ne sono alcuni di esempio sul primo utente.
+## Ingressi e pacchetti
+
+In alto tre riquadri: ingressi **rimasti** (somma dei pacchetti dell'utente), ingressi del mese, totale registrati.
+
+**Pacchetti.** Con **+ Pacchetto** si carica un pacchetto da **10, 20 o 30 lezioni**, oppure si scrive un numero a scelta; si indicano data di acquisto e note. Ogni pacchetto mostra le lezioni rimaste con una barra di avanzamento; toccandolo si modifica (non si può scendere sotto le lezioni già usate) o si elimina. I pacchetti esauriti restano visibili come storico.
+
+**Condividere gli ingressi.** Nel modulo del pacchetto si scelgono gli utenti che lo condividono (per esempio una coppia o una famiglia): le lezioni sono una sola scorta comune, ogni ingresso di uno qualsiasi degli utenti ne scala una. Il pacchetto compare nella scheda ingressi di ciascuno, con il dettaglio di quante lezioni ha usato ognuno.
+
+**Registro ingressi.** Con **+ Ingresso** si registra un ingresso (data e ora sono già quelle di adesso, l'uscita è facoltativa). Il campo *Scala la lezione da* propone in automatico il pacchetto più vecchio con lezioni disponibili; si può scegliere un altro pacchetto o *Nessun pacchetto*. Toccando una riga si modifica o si elimina; con **Elimina** se ne selezionano più d'uno (la lezione torna nel pacchetto). In fondo, **Prenotazioni in calendario** elenca le prossime voci dell'utente; toccandone una si apre quel giorno nel Calendario.
+
+**Avviso in home.** Quando un pacchetto ha **3 lezioni o meno** (o è esaurito) compare in cima alla home un avviso giallo (rosso se esaurito) con i nomi degli utenti che lo usano; toccandolo si apre la scheda ingressi. L'avviso non compare se tutti gli utenti di quel pacchetto ne hanno già uno più recente. La soglia è la costante `SOGLIA` in `index.html`.
+
+Cancellando un utente si cancellano anche i suoi ingressi e lo si toglie dai pacchetti condivisi (un pacchetto senza più utenti viene eliminato). Eliminando un pacchetto, gli ingressi già registrati restano nel registro senza pacchetto. Come per le altre sezioni, fuori da claude.ai pacchetti e ingressi restano in memoria fino al ricaricamento della pagina; all'apertura ci sono alcuni dati di esempio.
