@@ -5,32 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Carma Medical Wellness</title>
 <style>
-:root{
-  --bg:#f3f7f6;--surface:#fff;--text:#12302b;--muted:#5d7872;--line:#dbe6e3;--brand:#0f766e;--brand-soft:#d9f0ec;
-  --c1:#0f766e; --c2:#c2410c; --c3:#1d4ed8; --c4:#7e22ce; --c5:#be123c;
-  --c6:#0369a1; --c7:#15803d; --c8:#a21caf; --c9:#b45309; --c10:#4338ca;
-  --c11:#ca8a04; --c12:#059669; --c13:#d97706; --c14:#e11d48; --c15:#6366f1;
-  --c16:#0d9488; --c17:#c026d3; --c18:#2563eb; --c19:#ea580c; --c20:#475569;
-  color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)
-}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#0d1a18;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;
-    --c1:#2dd4bf; --c2:#fb923c; --c3:#60a5fa; --c4:#c084fc; --c5:#fb7185;
-    --c6:#38bdf8; --c7:#4ade80; --c8:#e879f9; --c9:#fbbf24; --c10:#818cf8;
-    --c11:#facc15; --c12:#34d399; --c13:#f59e0b; --c14:#f43f5e; --c15:#a5b4fc;
-    --c16:#5eead4; --c17:#f0abfc; --c18:#93c5fd; --c19:#fdba74; --c20:#94a3b8;
-    color-scheme:dark
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0d1a18;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;
-  --c1:#2dd4bf; --c2:#fb923c; --c3:#60a5fa; --c4:#c084fc; --c5:#fb7185;
-  --c6:#38bdf8; --c7:#4ade80; --c8:#e879f9; --c9:#fbbf24; --c10:#818cf8;
-  --c11:#facc15; --c12:#34d399; --c13:#f59e0b; --c14:#f43f5e; --c15:#a5b4fc;
-  --c16:#5eead4; --c17:#f0abfc; --c18:#93c5fd; --c19:#fdba74; --c20:#94a3b8;
-  color-scheme:dark
-}
+:root{--bg:#f3f7f6;--surface:#fff;--text:#12302b;--muted:#5d7872;--line:#dbe6e3;--brand:#0f766e;--brand-soft:#d9f0ec;--c1:#0f766e;--c2:#c2410c;--c3:#1d4ed8;--c4:#7e22ce;
+color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a18;--surface:#152724;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1a18;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -98,6 +76,7 @@ h2{font-size:22px;margin:0 0 4px}
 .stage.tablet .urow{align-items:center}
 .stage.tablet .urow input[type=checkbox]{margin-top:0}
 .stage.tablet .cells{font-size:13px}.stage.tablet .cells b{font-size:15px}
+.stage.tablet .app,.stage.tablet .app{max-width:1024px}
 .modal{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
 .mbox{background:var(--surface);color:var(--text);border-radius:18px;padding:22px;width:100%;max-width:420px;max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .mbox h3{margin:0 0 4px}.mbox label{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
@@ -217,11 +196,11 @@ h2{font-size:22px;margin:0 0 4px}
 .yd.today{background:var(--brand);color:#fff;font-weight:700}
 .mbox select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit}
 .frow{display:flex;gap:8px}.frow label{flex:1;min-width:0}
-.crow{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
-.mbox label.cc{flex-direction:row;cursor:pointer;width:30px;height:30px}
+.crow{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.mbox label.cc{flex-direction:row;cursor:pointer}
 .cc input{display:none}
-.cc i{display:block;width:30px;height:30px;border-radius:50%;background:var(--col);border:3px solid transparent;box-shadow:inset 0 0 0 2px var(--surface);transition:transform .12s,border-color .12s}
-.cc input:checked+i{border-color:var(--text);transform:scale(1.1)}
+.cc i{display:block;width:32px;height:32px;border-radius:50%;background:var(--col);border:3px solid transparent;box-shadow:inset 0 0 0 2px var(--surface)}
+.cc input:checked+i{border-color:var(--text)}
 .cul{max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .mbox label.cur{flex-direction:row;align-items:center;gap:10px;font-size:14px;color:var(--text);padding:7px 10px;border-bottom:1px solid var(--line);cursor:pointer}
 .cur:last-child{border-bottom:none}
@@ -229,6 +208,18 @@ h2{font-size:22px;margin:0 0 4px}
 .av.sm{width:30px;height:30px;font-size:12px}
 .cun{display:flex;flex-direction:column;min-width:0}
 .cun small{font-size:12px;color:#c2410c}
+/* menu utente e ingressi */
+.umenu{display:flex;flex-direction:column;gap:8px}
+.umenu button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font:inherit;font-weight:600;cursor:pointer}
+.umenu button:hover{border-color:var(--brand)}
+.umenu small{display:block;font-weight:400;font-size:13px;color:var(--muted)}
+.umenu i{font-style:normal;font-size:22px;color:var(--muted)}
+.istats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.ist{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center}
+.ist b{display:block;font-size:22px;color:var(--brand);line-height:1.3}
+.ist b.sm{font-size:15px;line-height:2}
+.ist span{font-size:12px;color:var(--muted)}
+.ih{margin:24px 0 8px;font-size:17px}
 /* login: attivare a programma finito */
 #login{display:none;position:absolute;inset:0;z-index:5;background:var(--bg);align-items:center;justify-content:center;padding:24px}
 #login.on{display:flex}
@@ -236,6 +227,7 @@ h2{font-size:22px;margin:0 0 4px}
 .lbox .logo{margin:0 auto;width:64px;height:64px;font-size:30px;border-radius:18px}
 .lbox input{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit}
 .lbox button{padding:12px;border:none;border-radius:12px;background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -302,7 +294,7 @@ function render(){
   document.getElementById('side').innerHTML = items.map(function(x){var f=x.id==='schede'?'Schede allenamento':x.t;return '<button data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+f+'</span></button>'}).join('');
 }
 document.addEventListener('click', function(e){
-  var b = e.target.closest('[data-go]'); if (b) { cur = b.getAttribute('data-go'); render(); window.scrollTo(0,0); }
+  var b = e.target.closest('[data-go]'); if (b) { cur = b.getAttribute('data-go'); iuid = null; render(); window.scrollTo(0,0); }
 });
 function setView(v){
   document.getElementById('stage').className = 'stage ' + v;
@@ -344,11 +336,13 @@ function sampleMsg(){
       dbSch = db.collection('schede'); SCH = [];
       dbSch.onSnapshot(function(q){SCH=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});refreshSchede()},function(){});
       dbCal = db.collection('calendario'); CAL = [];
+      dbIng = db.collection('ingressi'); ING = [];
+      dbIng.onSnapshot(function(q){ING=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});refreshIng()},function(){});
       dbCal.onSnapshot(function(q){CAL=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});refreshCal()},function(){});
       dbCol.onSnapshot(function(s){
         U = s.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});
         if(cur==='utenti' && document.getElementById('ulist')) listUtenti();
-        refreshSchede();refreshCal();
+        refreshSchede();refreshCal();refreshIng();
       }, function(){});
     }
   }catch(e){}
@@ -361,6 +355,7 @@ function filtered(){
    .sort(function(a,b){return (a.c+a.n).localeCompare(b.c+b.n)});
 }
 function renderUtenti(){
+  if(iuid){renderIng();return}
   document.getElementById('main').innerHTML =
    '<div class="uh"><div><h2>Utenti</h2><p class="sub" id="ucount"></p></div><div class="uact">'+
    '<button class="ab pri" data-act="add" aria-label="Crea utente"><span class="i">+</span><span class="t">Crea</span></button>'+
@@ -410,6 +405,7 @@ async function pickFile(side,file){
     var br=document.getElementById('bread'); if(br) br.disabled=!(caps.sample||sState==='local');
   }catch(e){ st('rstat','Immagine non valida: scegli una foto (JPG o PNG).') }
 }
+// Lettura documento direttamente nel browser (Tesseract.js), senza server e senza API
 var DIG={O:'0',Q:'0',D:'0',I:'1',L:'1',Z:'2',S:'5',B:'8',G:'6'}, LET={'0':'O','1':'I','2':'Z','5':'S','8':'B','6':'G'};
 function dfix(s){return s.replace(/[A-Z]/g,function(c){return DIG[c]||c})}
 function lfix(s){return s.replace(/[0-9]/g,function(c){return LET[c]||c})}
@@ -431,6 +427,7 @@ function parseMRZ(t){
     if(is2){if(!l2)l2=x}else if(is3){if(!l3)l3=x}else if(/^[ICA][A-Z<]/.test(x)&&/\d/.test(x.slice(5,14))){if(!l1)l1=x}
   });
   var o={};
+  // date e numero documento solo se il carattere di controllo della riga torna
   if(l2){
     var b=dfix(l2.slice(0,6)); if(mrzCheck(b)===+dfix(l2.charAt(6))) o.data_nascita=ymd(b,'b');
     var e=dfix(l2.slice(8,14)); if(mrzCheck(e)===+dfix(l2.charAt(14))) o.scadenza=ymd(e,'e');
@@ -473,6 +470,7 @@ function parseFront(t){
   if(ds.length>=2){
     o.data_nascita=nb.length?nb[0]:ds[0];
     var mx=ds[ds.length-1];
+    // la scadenza è la data più recente; con sole due date serve l'etichetta per distinguerla dall'emissione
     if(ds.length>=3||ne.indexOf(mx)>-1)o.scadenza=mx;
   }else if(ds.length===1){
     if(ne.length)o.scadenza=ds[0];else if(nb.length)o.data_nascita=ds[0];
@@ -489,6 +487,7 @@ function loadTess(){
   return addScript(TESS_BASE+'tesseract.min.js').then(function(){TESS_LOCAL=true;return window.Tesseract})
    .catch(function(){return addScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js').then(function(){return window.Tesseract})});
 }
+// ingrandisce, passa in grigio, aumenta il contrasto; con y0 taglia la parte bassa; con bin rende bianco/nero
 function prep(blob,o){return new Promise(function(ok,ko){
   var im=new Image(),u=URL.createObjectURL(blob);
   im.onerror=function(){ko(new Error('img'))};
@@ -522,6 +521,7 @@ function showRaw(txt){var d=document.getElementById('rawd'),p=document.getElemen
 async function localRead(){
   var prog=function(p){st('rstat','Lettura in corso… '+Math.round(p*100)+'%')}, texts=[], mrzTexts=[];
   for(var s of ['front','back']){ if(draft[s]) texts.push(await ocr(await prep(draft[s],{w:2000}),'ita',null,prog)) }
+  // riga di caratteri in basso (MRZ): provo in grigio e in bianco/nero e tengo il risultato più completo
   var mrz={}, src=draft.back||draft.front;
   for(var bin of [false,true]){
     var tx=await ocr(await prep(src,{y0:.55,w:2400,bin:bin}),'eng',{tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<',tessedit_pageseg_mode:'6'},prog);
@@ -584,6 +584,7 @@ async function doDelete(){
     if(dbCol){try{await dbCol.doc(String(u.id)).delete()}catch(e){}}
     await dropSchedeOf(u.id);
     await dropUserFromCal(u.id);
+    await dropIngOf(u.id);
     if(caps.assets){for(var s of ['frontId','backId']){if(u[s]){try{await caps.assets.delete(u[s])}catch(e){}}}}
   }
   if(!dbCol)U=U.filter(function(u){return !sel[u.id]});
@@ -603,9 +604,9 @@ document.addEventListener('click',function(e){
     else if(k==='confirmdel'){var n=Object.keys(sel).length;if(!n)return;modal('<h3>Elimina utenti</h3><p>Vuoi eliminare '+n+(n===1?' utente selezionato':' utenti selezionati')+', compresi i documenti salvati? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="dodel">Elimina</button></div>')}
     else if(k==='dodel')doDelete();
     return}
-  if(r){var id=r.getAttribute('data-row');if(dm){if(sel[id])delete sel[id];else sel[id]=1;listUtenti()}else openUser(id)}
+  if(r){var id=r.getAttribute('data-row');if(dm){if(sel[id])delete sel[id];else sel[id]=1;listUtenti()}else openUserMenu(id)}
 });
-// ---- Schede allenamento ----
+// ---- Schede allenamento (struttura provvisoria: nome, data, note, elenco esercizi con serie, ripetizioni e carico) ----
 var EXLIST=['Panca piana','Squat','Stacco da terra','Military press','Rematore con bilanciere','Trazioni','Lat machine','Leg press','Curl con bilanciere','Pushdown ai cavi','Affondi','Plank'];
 function mkS(id,u,nome,data,es){return {id:'d'+id,uid:String(u),nome:nome,data:data,note:'',es:es.map(function(x){return {n:x[0],s:x[1],r:x[2],k:x[3],g:x[4]}})}}
 var SCH=[
@@ -789,14 +790,15 @@ document.addEventListener('click',function(e){
   var sr=e.target.closest('[data-srow]');
   if(sr){var id=sr.getAttribute('data-srow');if(sdm){if(ssel[id])delete ssel[id];else ssel[id]=1;listSchede()}else viewScheda(id)}
 });
-// ---- Calendario ----
+// ---- Calendario: giorno / settimana / mese / anno, timeline, spostamento con il dito, utenti assegnati alle fasce orarie ----
+// Ogni voce: {id, t:titolo, k:'lezione'|'accesso', day:'AAAA-MM-GG', s:inizio in minuti, e:fine in minuti, c:colore 0-3, note, u:[id utenti]}
+// Più utenti possono essere assegnati alla stessa fascia, e più voci possono sovrapporsi.
 var MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
 var MESI3=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
 var GIORNI=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
 var GIORNI3=['dom','lun','mar','mer','gio','ven','sab'];
 var GLET=['L','M','M','G','V','S','D'];
-var HH=56, SNAP=15;
-var CCOL=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)','var(--c9)','var(--c10)','var(--c11)','var(--c12)','var(--c13)','var(--c14)','var(--c15)','var(--c16)','var(--c17)','var(--c18)','var(--c19)','var(--c20)'];
+var HH=56, SNAP=15, CCOL=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','#dc2626','#db2777','#c026d3','#4f46e5','#0284c7','#0891b2','#059669','#16a34a','#65a30d','#ca8a04','#d97706','#ea580c','#92400e','#475569','#f43f5e','#14b8a6','#8b5cf6','#3b82f6','#78716c','#4d7c0f'].slice(0,20);
 var cuid=100, calV='day', calD=new Date(), calScroll=null, dbCal=null, cdrag=null, calNoClick=0, fsel={}, fid=null;
 function pad(n){return ('0'+n).slice(-2)}
 function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
@@ -886,6 +888,7 @@ function stripHtml(){
   return '<div class="wstrip">'+h+'</div>';
 }
 function nowY(){var n=new Date();return (n.getHours()*60+n.getMinutes())/60*HH}
+// colonne affiancate per le voci che si sovrappongono (come nel calendario Apple)
 function layoutDay(L){
   L=L.slice().sort(function(a,b){return a.s-b.s||b.e-a.e});
   var res={},cl=[],cend=-1;
@@ -921,6 +924,7 @@ function monthHtml(){
   var h='<div class="mgrid">'+GLET.map(function(l){return '<div class="mw">'+l+'</div>'}).join('');
   for(var i=0;i<rows*7;i++){
     var d=addDays(start,i),s=iso(d),L=CAL.filter(function(x){return x.day===s}).sort(function(a,b){return a.s-b.s});
+    var nu={};L.forEach(function(x){(x.u||[]).forEach(function(u){nu[u]=1})});
     var dots=L.slice(0,4).map(function(x){return '<i style="--col:'+CCOL[x.c||0]+'"></i>'}).join('');
     var chips=L.slice(0,3).map(function(x){return '<span class="mchip" style="--col:'+CCOL[x.c||0]+'">'+hm(x.s)+' '+esc(ctitle(x))+'</span>'}).join('')+(L.length>3?'<span class="mchip" style="--col:var(--muted)">+'+(L.length-3)+' altre</span>':'');
     h+='<button class="mday'+(d.getMonth()!==mo?' out':'')+(s===today?' today':'')+(s===sel?' sel':'')+'" data-cd="'+s+'" aria-label="'+esc(dayLong(d))+(L.length?', '+L.length+' voci':'')+'"><span class="n">'+d.getDate()+'</span>'+(L.length?'<span class="mdots">'+dots+'</span>'+chips:'')+'</button>';
@@ -952,6 +956,7 @@ function goDay(s){
   else{calD=parseIso(s);calV='day'}
   drawCal();
 }
+// ---- modulo voce ----
 function formTimes(){
   var d=document.getElementById('c_d'),s=document.getElementById('c_s'),e=document.getElementById('c_e');
   if(!d||!s||!e)return null;
@@ -979,9 +984,7 @@ function calForm(id,pre){
    '<label>Titolo<input id="c_t" type="text" placeholder="es. Yoga, Spinning…"></label>'+
    '<label>Data<input id="c_d" type="date"></label>'+
    '<div class="frow"><label>Inizio<input id="c_s" type="time" step="900"></label><label>Fine<input id="c_e" type="time" step="900"></label></div>'+
-   '<div><div style="font-size:13px;color:var(--muted)">Colore</div><div class="crow">'+
-   CCOL.map(function(c,i){return '<label class="cc" style="--col:'+c+'" title="Colore '+(i+1)+'"><input type="radio" name="c_c" value="'+i+'"><i></i></label>'}).join('')+
-   '</div></div>'+
+   '<div><div style="font-size:13px;color:var(--muted)">Colore</div><div class="crow">'+CCOL.map(function(c,i){return '<label class="cc" style="--col:'+c+'"><input type="radio" name="c_c" value="'+i+'"><i></i></label>'}).join('')+'</div></div>'+
    '<label>Note<input id="c_n" type="text"></label>'+
    '<b id="c_uc" style="font-size:14px;margin-top:4px"></b>'+
    '<input class="search" id="c_q" type="search" placeholder="Cerca utente…" style="margin:0"><div class="cul" id="c_ul"></div>'+
@@ -990,7 +993,7 @@ function calForm(id,pre){
   document.querySelector('#modal .mbox').classList.add('wide');
   document.getElementById('c_k').value=o.k;document.getElementById('c_t').value=o.t||'';document.getElementById('c_d').value=o.day;
   document.getElementById('c_s').value=hm(o.s);document.getElementById('c_e').value=hm(o.e);document.getElementById('c_n').value=o.note||'';
-  var rad=document.querySelector('input[name=c_c][value="'+(o.c||0)+'"]');if(rad)rad.checked=true;
+  document.querySelector('input[name=c_c][value="'+(o.c||0)+'"]').checked=true;
   cuCount();culRefresh();
 }
 async function saveCalForm(){
@@ -1013,6 +1016,7 @@ async function delCal(id){
   CAL=CAL.filter(function(x){return String(x.id)!==String(id)});
   closeModal();drawCal();
 }
+// ---- spostamento e ridimensionamento col dito o col mouse ----
 function dragOn(d){
   d.active=true;d.el.classList.add('drag');calApply(d);
   d.raf=requestAnimationFrame(calAuto);
@@ -1059,6 +1063,7 @@ document.addEventListener('pointerdown',function(e){
   var d=cdrag={el:ev,it:it,mode:e.target.closest('.rh')?'resize':'move',pid:e.pointerId,x0:e.clientX,y0:e.clientY,cx:e.clientX,cy:e.clientY,active:false,touch:e.pointerType!=='mouse',
     s0:it.s,e0:it.e,day0:it.day,s:it.s,e:it.e,day:it.day,body:body,cols:[].slice.call(body.querySelectorAll('.col')),colLeft:col.getBoundingClientRect().left,grab:e.clientY-ev.getBoundingClientRect().top};
   try{ev.setPointerCapture(e.pointerId)}catch(_){}
+  // col dito: serve un tocco prolungato per afferrare la voce, così lo scorrimento della pagina resta libero
   if(d.touch&&d.mode==='move')d.tm=setTimeout(function(){if(cdrag===d)dragOn(d)},380);
 });
 document.addEventListener('pointermove',function(e){
@@ -1109,6 +1114,105 @@ document.addEventListener('click',function(e){
   if(ci){calForm(ci.getAttribute('data-ci'));return}
   var col=e.target.closest('.col');
   if(col){var y=e.clientY-col.getBoundingClientRect().top,s=Math.max(0,Math.min(23*60,Math.floor(y/HH*2)*30));calForm(null,{day:col.getAttribute('data-day'),s:s,e:Math.min(1440,s+60)})}
+});
+// ---- Ingressi di un utente (si apre dal menu dell'utente) ----
+// Ogni ingresso: {id, uid, day:'AAAA-MM-GG', ent:'HH:MM', usc:'HH:MM' o '', note}
+var ING=[], dbIng=null, iuid=null, idm=false, isel={}, iid=0;
+(function(){var t=new Date();[[2,'17:30','18:45'],[5,'09:00','10:15'],[9,'18:00','19:30'],[12,'17:45','19:00'],[20,'09:15','10:30']].forEach(function(x){ING.push({id:'i'+(++iid),uid:'1',day:iso(addDays(t,-x[0])),ent:x[1],usc:x[2],note:''})})})();
+function ingOf(u){return ING.filter(function(x){return String(x.uid)===String(u)}).sort(function(a,b){return (b.day+b.ent).localeCompare(a.day+a.ent)})}
+function findI(id){return ING.filter(function(x){return String(x.id)===String(id)})[0]}
+function durTxt(a,b){
+  if(!b)return '';var m=tmin(b)-tmin(a);if(isNaN(m)||m<=0)return '';
+  var h=Math.floor(m/60),mm=m%60;return (h?h+' h':'')+(h&&mm?' ':'')+(mm?mm+' min':'');
+}
+function openUserMenu(id){
+  var u=find(id);if(!u)return;
+  var s=schedeOf(id).length,n=ingOf(id).length,i=esc(u.id);
+  modal('<h3>'+esc(u.n+' '+u.c)+'</h3><div class="umenu">'+
+   '<button data-act="um_ana" data-id="'+i+'"><span>Anagrafica<small>Dati personali e documento</small></span><i>›</i></button>'+
+   '<button data-act="um_sch" data-id="'+i+'"><span>Scheda allenamento<small>'+(s?s+(s===1?' scheda':' schede'):'Nessuna scheda')+'</small></span><i>›</i></button>'+
+   '<button data-act="um_ing" data-id="'+i+'"><span>Ingressi<small>'+(n?n+(n===1?' ingresso registrato':' ingressi registrati'):'Nessun ingresso registrato')+'</small></span><i>›</i></button></div>'+
+   '<div class="mrow"><button data-act="mclose">Chiudi</button></div>');
+}
+function goSchede(id){closeModal();cur='schede';suid=String(id);sdm=false;ssel={};trend=[];eq='';render();window.scrollTo(0,0)}
+function goIng(id){closeModal();iuid=String(id);idm=false;isel={};renderUtenti();window.scrollTo(0,0)}
+function renderIng(){
+  var u=find(iuid);if(!u){iuid=null;renderUtenti();return}
+  document.getElementById('main').innerHTML='<button class="back" data-act="ing_back">← Utenti</button><div class="uh"><div><h2>Ingressi</h2><p class="sub">'+esc(u.n+' '+u.c)+'</p></div><div class="uact">'+
+   '<button class="ab pri" data-act="ing_add" aria-label="Registra ingresso"><span class="i">+</span><span class="t">Crea</span></button>'+
+   '<button class="ab" id="ibdel" data-act="ing_del" aria-label="Elimina ingressi"><span class="i">−</span><span class="t">Elimina</span></button></div></div>'+
+   '<div class="istats" id="istats"></div><div id="idbar"></div><div id="ilist"></div><h3 class="ih">Prenotazioni in calendario</h3><div id="iprev"></div>';
+  listIng();
+}
+function listIng(){
+  if(!document.getElementById('ilist'))return;
+  var u=find(iuid);if(!u){iuid=null;renderUtenti();return}
+  var L=ingOf(iuid),today=iso(new Date()),mese=today.slice(0,7),n=Object.keys(isel).length;
+  var nm=L.filter(function(x){return x.day.slice(0,7)===mese}).length;
+  document.getElementById('istats').innerHTML='<div class="ist"><b>'+nm+'</b><span>Questo mese</span></div><div class="ist"><b>'+L.length+'</b><span>Totale</span></div><div class="ist"><b class="sm">'+(L.length?fdate(L[0].day):'—')+'</b><span>Ultimo ingresso</span></div>';
+  document.getElementById('ibdel').classList.toggle('danger',idm);
+  document.getElementById('idbar').innerHTML=idm?'<div class="dbar"><span>Seleziona gli ingressi da eliminare ('+n+')</span><div><button data-act="ing_cancel">Annulla</button><button class="danger" data-act="ing_confirm"'+(n?'':' disabled')+'>Elimina</button></div></div>':'';
+  document.getElementById('ilist').innerHTML=L.length?L.map(function(x){
+    var d=durTxt(x.ent,x.usc);
+    return '<div class="urow'+(isel[x.id]?' sel':'')+'" data-irow="'+esc(x.id)+'" style="cursor:pointer">'+(idm?'<input type="checkbox"'+(isel[x.id]?' checked':'')+' aria-label="Seleziona">':'')+
+     '<div class="cells two"><b>'+GIORNI3[parseIso(x.day).getDay()]+' '+fdate(x.day)+'</b><span>'+esc(x.ent)+(x.usc?'–'+esc(x.usc):' · uscita non registrata')+(d?' · '+d:'')+(x.note?' · '+esc(x.note):'')+'</span></div></div>';
+  }).join(''):'<div class="empty">Nessun ingresso registrato. Aggiungilo con +.</div>';
+  var P=CAL.filter(function(x){return x.day>=today&&(x.u||[]).indexOf(String(iuid))>-1}).sort(function(a,b){return a.day.localeCompare(b.day)||a.s-b.s}).slice(0,8);
+  document.getElementById('iprev').innerHTML=P.length?P.map(function(it){
+    return '<div class="urow" data-ical="'+esc(it.day)+'" style="cursor:pointer;--col:'+CCOL[it.c||0]+'"><span class="cbar"></span><div class="cells two"><b>'+GIORNI3[parseIso(it.day).getDay()]+' '+fdate(it.day)+'</b><span>'+hm(it.s)+'–'+hm(it.e)+' · '+esc(ctitle(it))+'</span></div></div>';
+  }).join(''):'<div class="empty" style="padding:14px 0">Nessuna prenotazione in programma.</div>';
+}
+function refreshIng(){if(cur==='utenti'&&iuid&&document.getElementById('ilist'))listIng()}
+function ingForm(id){
+  var it=id?findI(id):null,n=new Date();
+  var o=it||{day:iso(n),ent:hm(n.getHours()*60+n.getMinutes()),usc:'',note:''};
+  modal('<h3>'+(it?'Modifica ingresso':'Nuovo ingresso')+'</h3><label>Data<input id="i_d" type="date"></label>'+
+   '<div class="frow"><label>Ingresso<input id="i_e" type="time"></label><label>Uscita (facoltativa)<input id="i_u" type="time"></label></div>'+
+   '<label>Note<input id="i_n" type="text"></label><div class="status" id="i_st"></div>'+
+   '<div class="mrow">'+(it?'<button class="danger" data-act="ing_rm" data-id="'+esc(it.id)+'" style="margin-right:auto">Elimina</button>':'')+'<button data-act="mclose">Annulla</button><button class="pri" id="i_sv" data-act="ing_save" data-id="'+(it?esc(it.id):'')+'">Salva</button></div>');
+  document.getElementById('i_d').value=o.day;document.getElementById('i_e').value=o.ent;document.getElementById('i_u').value=o.usc||'';document.getElementById('i_n').value=o.note||'';
+}
+async function saveIng(id){
+  var day=document.getElementById('i_d').value,e=document.getElementById('i_e').value,u=document.getElementById('i_u').value,note=document.getElementById('i_n').value.trim();
+  if(!day||tmin(e)==null){st('i_st','Indica data e ora di ingresso.');return}
+  if(u&&(tmin(u)==null||tmin(u)<=tmin(e))){st('i_st','L’uscita deve essere dopo l’ingresso.');return}
+  var o={day:day,ent:e,usc:u,note:note},b=document.getElementById('i_sv');b.disabled=true;b.textContent='Salvataggio…';
+  try{
+    if(id){var it=findI(id);Object.keys(o).forEach(function(k){it[k]=o[k]});if(dbIng)await dbIng.doc(String(id)).update(o)}
+    else{o.uid=String(iuid);if(dbIng)await dbIng.add(o);else{o.id='i'+(++iid);ING.push(o)}}
+    closeModal();listIng();
+  }catch(err){b.disabled=false;b.textContent='Salva';st('i_st','Salvataggio non riuscito. Riprova.')}
+}
+async function delIng(ids){
+  for(var i=0;i<ids.length;i++){if(dbIng){try{await dbIng.doc(String(ids[i])).delete()}catch(e){}}}
+  ING=ING.filter(function(x){return ids.indexOf(String(x.id))<0});
+  isel={};idm=false;closeModal();listIng();
+}
+async function dropIngOf(id){
+  var ids=ingOf(id).map(function(x){return String(x.id)});
+  if(ids.length)await delIng(ids);
+}
+document.addEventListener('click',function(e){
+  var a=e.target.closest('[data-act]');
+  if(a){var k=a.getAttribute('data-act'),id=a.getAttribute('data-id');
+    if(k==='um_ana')openUser(id);
+    else if(k==='um_sch')goSchede(id);
+    else if(k==='um_ing')goIng(id);
+    else if(k==='ing_back'){iuid=null;idm=false;isel={};renderUtenti()}
+    else if(k==='ing_add')ingForm(null);
+    else if(k==='ing_save')saveIng(id||null);
+    else if(k==='ing_del'){idm=!idm;isel={};listIng()}
+    else if(k==='ing_cancel'){idm=false;isel={};listIng()}
+    else if(k==='ing_confirm'){var n=Object.keys(isel).length;if(!n)return;modal('<h3>Elimina ingressi</h3><p>Vuoi eliminare '+n+(n===1?' ingresso selezionato':' ingressi selezionati')+'? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="ing_dodel">Elimina</button></div>')}
+    else if(k==='ing_rm')modal('<h3>Elimina ingresso</h3><p>Vuoi eliminare questo ingresso? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="ing_dodel" data-id="'+esc(id)+'">Elimina</button></div>');
+    else if(k==='ing_dodel')delIng(id?[String(id)]:Object.keys(isel));
+    return;
+  }
+  if(cur!=='utenti'||!iuid)return;
+  var r=e.target.closest('[data-irow]');
+  if(r){var i2=r.getAttribute('data-irow');if(idm){if(isel[i2])delete isel[i2];else isel[i2]=1;listIng()}else ingForm(i2);return}
+  var c=e.target.closest('[data-ical]');
+  if(c){calD=parseIso(c.getAttribute('data-ical'));calV='day';iuid=null;cur='calendario';render();window.scrollTo(0,0)}
 });
 setView(window.innerWidth>=768?'tablet':'mobile');
 render();

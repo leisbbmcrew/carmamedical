@@ -6,7 +6,7 @@ App di gestione palestra. Questa versione contiene la **home** con le sezioni pr
 
 | Sezione | Descrizione | Stato |
 |---|---|---|
-| Utenti | Elenco con anagrafica, ricerca, creazione ed eliminazione | Disponibile |
+| Utenti | Elenco con ricerca, creazione ed eliminazione; toccando un utente si apre il menu Anagrafica / Scheda allenamento / Ingressi | Disponibile |
 | Schede allenamento | Elenco utenti; per ogni utente crea ed elimina schede, storico con download e andamento degli esercizi | Disponibile (struttura delle schede provvisoria) |
 | Calendario | Viste giorno, settimana, mese e anno; lezioni e accessi con gli utenti assegnati alle fasce orarie | Disponibile |
 | Eventi | Open day, workshop e iniziative | Da sviluppare |
@@ -97,7 +97,7 @@ Quattro viste, che si cambiano dai pulsanti **Giorno / Settimana / Mese / Anno**
 - **Mese:** griglia del mese con i punti colorati delle voci (su tablet i titoli); toccando un giorno si vede l'elenco sotto, toccandolo ancora (o con **Apri giorno**) si apre la vista Giorno.
 - **Anno:** i dodici mesi; i giorni con voci sono evidenziati. Toccando il nome del mese si apre il mese, toccando un giorno si apre il giorno.
 
-**Voci del calendario.** Ogni voce ha tipo (*Lezione / evento* oppure *Accesso libero in palestra*), titolo, data, ora di inizio e fine, colore, note e **gli utenti assegnati**. Nella stessa fascia possono esserci più utenti e più voci insieme. Si crea con **+ / Crea** oppure toccando una fascia vuota della timeline; toccando una voce si modifica o si elimina. Nel modulo c'è un elenco degli utenti caricati, con ricerca; se un utente è già assegnato a un'altra voce nello stesso orario compare un avviso (si può salvare comunque).
+**Voci del calendario.** Ogni voce ha tipo (*Lezione / evento* oppure *Accesso libero in palestra*), titolo, data, ora di inizio e fine, colore (20 a scelta), note e **gli utenti assegnati**. Nella stessa fascia possono esserci più utenti e più voci insieme. Si crea con **+ / Crea** oppure toccando una fascia vuota della timeline; toccando una voce si modifica o si elimina. Nel modulo c'è un elenco degli utenti caricati, con ricerca; se un utente è già assegnato a un'altra voce nello stesso orario compare un avviso (si può salvare comunque).
 
 **Spostare le voci (giorno e settimana).**
 
@@ -109,3 +109,13 @@ Quattro viste, che si cambiano dai pulsanti **Giorno / Settimana / Mese / Anno**
 - Gli utenti assegnati si spostano insieme alla voce.
 
 Se si elimina un utente, viene tolto anche da tutte le voci del calendario. Come per utenti e schede, fuori da claude.ai le voci restano in memoria fino al ricaricamento della pagina: all'apertura compaiono alcune voci di esempio, da cancellare quando non servono più.
+
+## Menu dell'utente e Ingressi
+
+Toccando un utente nell'elenco (scheda Utenti) si apre un menu con tre voci:
+
+- **Anagrafica:** i dati personali e il documento d'identità salvato.
+- **Scheda allenamento:** apre direttamente le schede di quell'utente.
+- **Ingressi:** la scheda ingressi dell'utente. In alto ci sono tre riquadri (ingressi del mese, totale, data dell'ultimo ingresso), poi l'elenco con data, ora di ingresso e di uscita e durata. Con **+ / Crea** si registra un ingresso (data e ora sono già quelle di adesso; l'uscita è facoltativa e si può aggiungere dopo toccando la riga), con **− / Elimina** si selezionano e cancellano più ingressi. In fondo, **Prenotazioni in calendario** elenca le prossime voci a cui l'utente è assegnato; toccandone una si apre quel giorno nel Calendario.
+
+Cancellando un utente si cancellano anche i suoi ingressi. Come per le altre sezioni, fuori da claude.ai gli ingressi restano in memoria fino al ricaricamento della pagina; all'apertura ce ne sono alcuni di esempio sul primo utente.
