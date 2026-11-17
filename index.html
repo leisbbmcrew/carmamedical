@@ -85,6 +85,17 @@ h2{font-size:22px;margin:0 0 4px}
 .mrow button{padding:10px 18px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
 .mrow .pri{background:var(--brand);border-color:var(--brand);color:#fff}.mrow .danger{background:#dc2626;border-color:#dc2626;color:#fff}
 .empty{text-align:center;color:var(--muted);padding:30px 0}
+.idbox{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
+.idrow{display:flex;gap:10px;flex-wrap:wrap}
+.drop{flex:1;min-width:130px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
+.drop input{font-size:12px;padding:6px;max-width:100%}
+.drop img{display:none;width:100%;max-height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.idbox button{padding:10px 14px;border-radius:10px;border:1px solid var(--brand);background:var(--brand);color:#fff;font:inherit;cursor:pointer}
+.idbox .idrow button{background:var(--surface);color:var(--text);border-color:var(--line)}
+.idbox button:disabled{opacity:.5;cursor:default}
+.status{font-size:13px;color:var(--muted)}
+.dc{font-style:normal;font-size:11px;font-weight:600;color:var(--brand);background:var(--brand-soft);border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.det{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:14px}.det dt{color:var(--muted)}.det dd{margin:0;word-break:break-word}
 /* login: attivare a programma finito */
 #login{display:none;position:absolute;inset:0;z-index:5;background:var(--bg);align-items:center;justify-content:center;padding:24px}
 #login.on{display:flex}
@@ -170,14 +181,31 @@ var uid = 10;
 var U = [
  {id:1,n:'Marco',c:'Rossi',d:'1985-03-12',cf:'RSSMRC85C12A462X',t:'333 1234567',e:'marco.rossi@email.it',ci:'Ascoli Piceno'},
  {id:2,n:'Giulia',c:'Bianchi',d:'1992-07-25',cf:'BNCGLI92L65A462K',t:'347 7654321',e:'giulia.bianchi@email.it',ci:'San Benedetto'},
- {id:3,n:'Luca',c:'Ferrari',d:'1978-11-03',cf:'FRRLCU78S03A462P',t:'320 1122334',e:'luca.ferrari@email.it',ci:'Ascoli Piceno'},
- {id:4,n:'Sara',c:'Esposito',d:'1999-01-18',cf:'SPSSRA99A58A462R',t:'338 9988776',e:'sara.esposito@email.it',ci:'Offida'},
- {id:5,n:'Andrea',c:'Conti',d:'1988-09-30',cf:'CNTNDR88P30A462T',t:'349 5566778',e:'andrea.conti@email.it',ci:'Monteprandone'}
+ {id:3,n:'Luca',c:'Ferrari',d:'1978-11-03',cf:'FRRLCU78S03A462P',t:'320 1122334',e:'luca.ferrari@email.it',ci:'Ascoli Piceno'}
 ];
-var uq = '', dm = false, sel = {};
+var uq = '', dm = false, sel = {}, draft = {front:null,back:null};
+var dbCol = null, caps = {sample:null,assets:null,down:null};
+(async function(){
+  try{
+    var c = window.claude; if(!c || !c.use) return;
+    var db = await c.use('db');
+    caps.assets = await c.use('assets'); caps.sample = await c.use('sample'); caps.down = await c.use('downloads');
+    if(db){
+      dbCol = db.collection('utenti'); U = [];
+      dbCol.onSnapshot(function(s){
+        U = s.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});
+        if(cur==='utenti' && document.getElementById('ulist')) listUtenti();
+      }, function(){});
+    }
+  }catch(e){}
+})();
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function fdate(s){if(!s)return '—';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
-function filtered(){var q=uq.toLowerCase().trim();return U.filter(function(u){return !q||[u.n,u.c,u.cf,u.t,u.e,u.ci].join(' ').toLowerCase().indexOf(q)>-1})}
+function fdate(s){if(!s)return '—';var p=s.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s}
+function filtered(){
+  var q=uq.toLowerCase().trim();
+  return U.filter(function(u){return !q||[u.n,u.c,u.cf,u.t,u.e,u.ci].join(' ').toLowerCase().indexOf(q)>-1})
+   .sort(function(a,b){return (a.c+a.n).localeCompare(b.c+b.n)});
+}
 function renderUtenti(){
   document.getElementById('main').innerHTML =
    '<div class="uh"><div><h2>Utenti</h2><p class="sub" id="ucount"></p></div><div class="uact">'+
@@ -188,6 +216,7 @@ function renderUtenti(){
   document.getElementById('usearch').addEventListener('input',function(e){uq=e.target.value;listUtenti()});
   listUtenti();
 }
+function hasDoc(u){return !!(u.frontId||u.backId||u.frontBlob||u.backBlob)}
 function listUtenti(){
   var L = filtered(), n = Object.keys(sel).length;
   document.getElementById('ucount').textContent = L.length + (L.length===1?' utente':' utenti');
@@ -195,32 +224,105 @@ function listUtenti(){
   document.getElementById('bdel').classList.toggle('danger', dm);
   var h = L.length ? '<div class="uhead"><span>Nominativo</span><span>Nascita</span><span>Codice fiscale</span><span>Telefono</span><span>Email</span><span>Città</span></div>' : '<div class="empty">Nessun utente trovato.</div>';
   h += L.map(function(u){
-    return '<div class="urow'+(sel[u.id]?' sel':'')+'" data-row="'+u.id+'">'+(dm?'<input type="checkbox"'+(sel[u.id]?' checked':'')+' aria-label="Seleziona">':'')+
-    '<div class="av">'+esc(u.n[0]+u.c[0]).toUpperCase()+'</div><div class="cells"><b>'+esc(u.n+' '+u.c)+'</b><span>Nato il '+fdate(u.d)+'</span><span>'+esc(u.cf||'—')+'</span><span>'+esc(u.t||'—')+'</span><span>'+esc(u.e||'—')+'</span><span>'+esc(u.ci||'—')+'</span></div></div>';
+    return '<div class="urow'+(sel[u.id]?' sel':'')+'" data-row="'+esc(u.id)+'">'+(dm?'<input type="checkbox"'+(sel[u.id]?' checked':'')+' aria-label="Seleziona">':'')+
+    '<div class="av">'+esc((u.n[0]||'')+(u.c[0]||'')).toUpperCase()+'</div><div class="cells"><b>'+esc(u.n+' '+u.c)+(hasDoc(u)?' <i class="dc">documento</i>':'')+'</b><span>Nato il '+fdate(u.d)+'</span><span>'+esc(u.cf||'—')+'</span><span>'+esc(u.t||'—')+'</span><span>'+esc(u.e||'—')+'</span><span>'+esc(u.ci||'—')+'</span></div></div>';
   }).join('');
   document.getElementById('ulist').innerHTML = h;
 }
 function modal(html){var m=document.getElementById('modal');if(!m){m=document.createElement('div');m.id='modal';m.className='modal';document.body.appendChild(m)}m.innerHTML='<div class="mbox">'+html+'</div>'}
 function closeModal(){var m=document.getElementById('modal');if(m)m.remove()}
+function st(id,t){var e=document.getElementById(id);if(e)e.textContent=t}
+var FIELDS=[['n','Nome'],['c','Cognome'],['d','Data di nascita','date'],['cf','Codice fiscale'],['t','Telefono','tel'],['e','Email','email'],['ci','Città di residenza'],['dn','N. documento'],['ds','Scadenza documento','date']];
 function addForm(){
-  var f=[['n','Nome'],['c','Cognome'],['d','Data di nascita','date'],['cf','Codice fiscale'],['t','Telefono','tel'],['e','Email','email'],['ci','Città']];
-  modal('<h3>Nuovo utente</h3>'+f.map(function(x){return '<label>'+x[1]+(x[0]==='n'||x[0]==='c'?' *':'')+'<input id="f_'+x[0]+'" type="'+(x[2]||'text')+'"></label>'}).join('')+
-   '<div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" data-act="msave">Salva</button></div>');
+  draft={front:null,back:null};
+  modal('<h3>Nuovo utente</h3><div class="idbox"><b>Documento d’identità</b>'+
+   '<div class="idrow"><label class="drop">Fronte<input type="file" accept="image/*" data-side="front"><img id="pv_front" alt=""></label>'+
+   '<label class="drop">Retro<input type="file" accept="image/*" data-side="back"><img id="pv_back" alt=""></label></div>'+
+   '<button id="bread" data-act="read" disabled>Leggi dati dal documento</button><div class="status" id="rstat">'+(caps.sample?'Carica fronte e/o retro per compilare i campi in automatico.':'Lettura automatica non disponibile qui: compila i campi a mano.')+'</div></div>'+
+   FIELDS.map(function(x){return '<label>'+x[1]+(x[0]==='n'||x[0]==='c'?' *':'')+'<input id="f_'+x[0]+'" type="'+(x[2]||'text')+'"></label>'}).join('')+
+   '<div class="status" id="sstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="bsave" data-act="msave">Salva</button></div>');
 }
+function shrink(file){return new Promise(function(res,rej){
+  var im=new Image(),u=URL.createObjectURL(file);
+  im.onload=function(){var s=Math.min(1,1600/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*s);cv.height=Math.round(im.height*s);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(u);cv.toBlob(function(b){b?res(b):rej()},'image/jpeg',0.85)};
+  im.onerror=function(){rej()};im.src=u})}
+async function pickFile(side,file){
+  try{
+    var b=await shrink(file); draft[side]=b;
+    var pv=document.getElementById('pv_'+side); pv.src=URL.createObjectURL(b); pv.style.display='block';
+    var br=document.getElementById('bread'); if(br) br.disabled=!caps.sample;
+  }catch(e){ st('rstat','Immagine non valida: scegli una foto (JPG o PNG).') }
+}
+async function readDoc(){
+  var imgs=[draft.front,draft.back].filter(Boolean); if(!imgs.length||!caps.sample) return;
+  var b=document.getElementById('bread'); b.disabled=true; st('rstat','Lettura in corso…');
+  try{
+    var r=await caps.sample.json('Le immagini allegate sono il fronte e/o il retro di un documento d’identità (in quest’ordine: fronte, poi retro se presente). Estrai i dati e rispondi solo con un oggetto JSON con queste chiavi: nome, cognome, data_nascita (formato AAAA-MM-GG), codice_fiscale, residenza (solo città), numero_documento, scadenza (formato AAAA-MM-GG). Usa una stringa vuota per ciò che non è leggibile e non inventare nulla.',{images:imgs});
+    var m={n:r.nome,c:r.cognome,d:r.data_nascita,cf:r.codice_fiscale,ci:r.residenza,dn:r.numero_documento,ds:r.scadenza};
+    Object.keys(m).forEach(function(k){var el=document.getElementById('f_'+k);if(el&&m[k])el.value=String(m[k]).trim()});
+    st('rstat','Dati compilati: controllali prima di salvare.');
+  }catch(e){ st('rstat','Lettura non riuscita: compila i campi a mano.') }
+  b.disabled=false;
+}
+async function saveUser(){
+  var o={}; FIELDS.forEach(function(x){o[x[0]]=document.getElementById('f_'+x[0]).value.trim()});
+  if(!o.n||!o.c){document.getElementById(o.n?'f_c':'f_n').focus();return}
+  o.cf=o.cf.toUpperCase();
+  var has=draft.front||draft.back;
+  if(has&&dbCol&&!caps.assets){st('sstat','Archivio documenti non disponibile per questo profilo: rimuovi le foto per salvare.');return}
+  var b=document.getElementById('bsave'); b.disabled=true; b.textContent='Salvataggio…';
+  try{
+    for(var side of ['front','back']){ if(!draft[side])continue;
+      if(caps.assets){var a=await caps.assets.upload(draft[side]);o[side+'Id']=a.id}
+      else{o[side+'Blob']=draft[side]} }
+    if(dbCol){await dbCol.add(o)} else {o.id='l'+(++uid);U.unshift(o);listUtenti()}
+    closeModal();
+  }catch(e){b.disabled=false;b.textContent='Salva';st('sstat','Salvataggio non riuscito. Riprova.')}
+}
+function find(id){return U.filter(function(u){return String(u.id)===String(id)})[0]}
+function openUser(id){
+  var u=find(id); if(!u)return;
+  var rows=[['Nome',u.n+' '+u.c],['Data di nascita',fdate(u.d)],['Codice fiscale',u.cf],['Telefono',u.t],['Email',u.e],['Città',u.ci],['N. documento',u.dn],['Scadenza documento',fdate(u.ds)]];
+  var btn=function(s,l){return (u[s+'Id']||u[s+'Blob'])?'<button data-act="dl" data-id="'+esc(u.id)+'" data-side="'+s+'">Scarica '+l+'</button>':''};
+  var docs=btn('front','fronte')+btn('back','retro');
+  modal('<h3>'+esc(u.n+' '+u.c)+'</h3><dl class="det">'+rows.map(function(r){return '<dt>'+r[0]+'</dt><dd>'+esc(r[1]||'—')+'</dd>'}).join('')+'</dl>'+
+   '<div class="idbox"><b>Documento d’identità</b>'+(docs?'<div class="idrow">'+docs+'</div>':'<div class="status">Nessun documento salvato.</div>')+'<div class="status" id="dstat"></div></div>'+
+   '<div class="mrow"><button data-act="mclose">Chiudi</button></div>');
+}
+async function dl(id,side){
+  var u=find(id); if(!u)return;
+  try{
+    var blob=u[side+'Blob']; if(!blob){var r=await fetch('/_blob/'+u[side+'Id']);blob=await r.blob()}
+    var name=(u.c+'_'+u.n+'_'+(side==='front'?'fronte':'retro')+'.jpg').replace(/\s+/g,'_');
+    if(caps.down){await caps.down.save({filename:name,data:blob})}
+    else{var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove()}
+  }catch(e){ if(e&&e.code==='declined')return; st('dstat','Download non riuscito. Riprova.') }
+}
+async function doDelete(){
+  var ids=Object.keys(sel);
+  for(var i=0;i<ids.length;i++){
+    var u=find(ids[i]); if(!u)continue;
+    if(dbCol){try{await dbCol.doc(String(u.id)).delete()}catch(e){}}
+    if(caps.assets){for(var s of ['frontId','backId']){if(u[s]){try{await caps.assets.delete(u[s])}catch(e){}}}}
+  }
+  if(!dbCol)U=U.filter(function(u){return !sel[u.id]});
+  sel={};dm=false;closeModal();listUtenti();
+}
+document.addEventListener('change',function(e){var t=e.target;if(t.getAttribute&&t.getAttribute('data-side')&&t.files&&t.files[0])pickFile(t.getAttribute('data-side'),t.files[0])});
 document.addEventListener('click',function(e){
   var a=e.target.closest('[data-act]'),r=e.target.closest('[data-row]');
   if(a){var k=a.getAttribute('data-act');
     if(k==='add')addForm();
     else if(k==='mclose')closeModal();
-    else if(k==='msave'){var o={id:++uid};['n','c','d','cf','t','e','ci'].forEach(function(x){o[x]=document.getElementById('f_'+x).value.trim()});
-      if(!o.n||!o.c){document.getElementById(o.n?'f_c':'f_n').focus();return}
-      o.cf=o.cf.toUpperCase();U.unshift(o);closeModal();listUtenti()}
+    else if(k==='read')readDoc();
+    else if(k==='msave')saveUser();
+    else if(k==='dl')dl(a.getAttribute('data-id'),a.getAttribute('data-side'));
     else if(k==='del'){dm=!dm;sel={};listUtenti()}
     else if(k==='cancel'){dm=false;sel={};listUtenti()}
-    else if(k==='confirmdel'){var n=Object.keys(sel).length;if(!n)return;modal('<h3>Elimina utenti</h3><p>Vuoi eliminare '+n+(n===1?' utente selezionato':' utenti selezionati')+'? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="dodel">Elimina</button></div>')}
-    else if(k==='dodel'){U=U.filter(function(u){return !sel[u.id]});sel={};dm=false;closeModal();listUtenti()}
+    else if(k==='confirmdel'){var n=Object.keys(sel).length;if(!n)return;modal('<h3>Elimina utenti</h3><p>Vuoi eliminare '+n+(n===1?' utente selezionato':' utenti selezionati')+', compresi i documenti salvati? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="dodel">Elimina</button></div>')}
+    else if(k==='dodel')doDelete();
     return}
-  if(r&&dm){var id=r.getAttribute('data-row');if(sel[id])delete sel[id];else sel[id]=1;listUtenti()}
+  if(r){var id=r.getAttribute('data-row');if(dm){if(sel[id])delete sel[id];else sel[id]=1;listUtenti()}else openUser(id)}
 });
 setView(window.innerWidth>=768?'tablet':'mobile');
 render();
