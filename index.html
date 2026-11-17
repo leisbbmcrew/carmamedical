@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carma Medical Wellness</title>
+<style>
+:root{--bg:#f3f7f6;--surface:#fff;--text:#12302b;--muted:#5d7872;--line:#dbe6e3;--brand:#0f766e;--brand-soft:#d9f0ec;--c1:#0f766e;--c2:#c2410c;--c3:#1d4ed8;--c4:#7e22ce;
+color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a18;--surface:#152724;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1a18;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.preview{display:flex;gap:6px;justify-content:center;padding:10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.preview button{border:1px solid var(--line);background:none;color:var(--muted);padding:6px 14px;border-radius:99px;font:inherit;font-size:14px;cursor:pointer}
+.preview button[aria-pressed="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
+.stage{display:flex;justify-content:center;padding:0}
+.app{width:100%;background:var(--bg);min-height:calc(100vh - 54px);position:relative;display:flex;flex-direction:column}
+.stage.mobile .app{max-width:400px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.stage.tablet .app{max-width:900px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+header{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:20px}
+header h1{font-size:18px;margin:0;line-height:1.2}
+header small{color:var(--muted);font-size:13px}
+.layout{display:flex;flex:1;min-height:0}
+nav.side{display:none}
+main{flex:1;padding:20px;padding-bottom:90px}
+h2{font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 18px;font-size:15px}
+.grid{display:grid;gap:14px;grid-template-columns:1fr}
+.card{display:flex;flex-direction:column;gap:10px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;color:inherit;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--brand)}
+.card .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--col);background:color-mix(in srgb,var(--col) 14%,transparent)}
+.card .ic svg,.tab svg,.side button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{margin:0;font-size:18px}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card .stat{margin-top:auto;font-size:13px;color:var(--col);font-weight:600}
+.panel{background:var(--surface);border:1px dashed var(--line);border-radius:18px;padding:28px;text-align:center;color:var(--muted)}
+.back{background:none;border:none;color:var(--brand);font:inherit;cursor:pointer;padding:0 0 12px}
+.tabbar{position:sticky;bottom:0;display:flex;background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted);font:inherit;font-size:12px;padding:6px 2px;cursor:pointer}
+.tab[aria-current="true"]{color:var(--brand);font-weight:600}
+.stage.tablet nav.side{display:flex;flex-direction:column;gap:4px;width:220px;padding:16px 12px;background:var(--surface);border-right:1px solid var(--line)}
+.stage.tablet .side button{display:flex;align-items:center;gap:12px;background:none;border:none;color:var(--muted);font:inherit;padding:12px 14px;border-radius:12px;cursor:pointer;text-align:left}
+.stage.tablet .side button[aria-current="true"]{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.stage.tablet .tabbar{display:none}
+.stage.tablet main{padding:28px;padding-bottom:28px}
+.stage.tablet .grid{grid-template-columns:1fr 1fr}
+.stage.tablet .card{min-height:170px}
+/* login: attivare a programma finito */
+#login{display:none;position:absolute;inset:0;z-index:5;background:var(--bg);align-items:center;justify-content:center;padding:24px}
+#login.on{display:flex}
+.lbox{width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px;text-align:center}
+.lbox .logo{margin:0 auto;width:64px;height:64px;font-size:30px;border-radius:18px}
+.lbox input{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit}
+.lbox button{padding:12px;border:none;border-radius:12px;background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+@media (min-width:820px){.stage:not(.mobile) .app{max-width:900px}}
+</style>
+</head>
+<body>
+<div class="preview" role="group" aria-label="Anteprima">
+  <button id="bm" aria-pressed="true">Mobile</button>
+  <button id="bt" aria-pressed="false">Tablet</button>
+</div>
+<div class="stage mobile" id="stage">
+<div class="app">
+  <div id="login" aria-hidden="true">
+    <div class="lbox">
+      <div class="logo">C</div>
+      <h2>Carma Medical Wellness</h2>
+      <input type="email" placeholder="Email" autocomplete="username">
+      <input type="password" placeholder="Password" autocomplete="current-password">
+      <button type="button" onclick="document.getElementById('login').classList.remove('on')">Accedi</button>
+    </div>
+  </div>
+  <header>
+    <div class="logo">C</div>
+    <div><h1>Carma Medical Wellness</h1><small>Gestione palestra</small></div>
+  </header>
+  <div class="layout">
+    <nav class="side" id="side"></nav>
+    <main id="main"></main>
+  </div>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+</div>
+<script>
+// Impostare a true quando il programma è finito, per mostrare la schermata di login
+var LOGIN_ATTIVO = false;
+if (LOGIN_ATTIVO) { var l = document.getElementById('login'); l.classList.add('on'); l.setAttribute('aria-hidden','false'); }
+
+var I = {
+  home:'<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>',
+  users:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.8a3.5 3.5 0 010 6.4M18 14.4c2 .7 3.5 2.5 3.5 5.6"/></svg>',
+  plan:'<svg viewBox="0 0 24 24"><path d="M2 9v6M5 6v12M19 6v12M22 9v6M5 12h14"/></svg>',
+  cal:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  ev:'<svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>'
+};
+var S = [
+  {id:'utenti',t:'Utenti',d:'Iscritti, anagrafica e abbonamenti',i:I.users,c:'var(--c1)',s:'Gestisci iscritti'},
+  {id:'schede',t:'Schede allenamento',d:'Crea e assegna programmi di allenamento',i:I.plan,c:'var(--c2)',s:'Gestisci schede'},
+  {id:'calendario',t:'Calendario',d:'Corsi, appuntamenti e prenotazioni',i:I.cal,c:'var(--c3)',s:'Apri calendario'},
+  {id:'eventi',t:'Eventi',d:'Open day, workshop e iniziative',i:I.ev,c:'var(--c4)',s:'Gestisci eventi'}
+];
+var cur = 'home';
+function esc(s){return s}
+function render(){
+  var m = document.getElementById('main'), h = '';
+  if (cur === 'home') {
+    h = '<h2>Benvenuto</h2><p class="sub">Scegli una sezione per iniziare.</p><div class="grid">' +
+      S.map(function(x){return '<button class="card" style="--col:'+x.c+'" data-go="'+x.id+'"><div class="ic">'+x.i+'</div><h3>'+x.t+'</h3><p>'+x.d+'</p><span class="stat">'+x.s+' →</span></button>'}).join('') + '</div>';
+  } else {
+    var x = S.filter(function(y){return y.id===cur})[0];
+    h = '<button class="back" data-go="home">← Home</button><h2>'+x.t+'</h2><p class="sub">'+x.d+'</p><div class="panel">Sezione in sviluppo.</div>';
+  }
+  m.innerHTML = h;
+  var items = [{id:'home',t:'Home',i:I.home}].concat(S.map(function(x){return {id:x.id,t:x.id==='schede'?'Schede':x.t,i:x.i}}));
+  document.getElementById('tabbar').innerHTML = items.map(function(x){return '<button class="tab" data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+x.t+'</span></button>'}).join('');
+  document.getElementById('side').innerHTML = items.map(function(x){var f=x.id==='schede'?'Schede allenamento':x.t;return '<button data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+f+'</span></button>'}).join('');
+}
+document.addEventListener('click', function(e){
+  var b = e.target.closest('[data-go]'); if (b) { cur = b.getAttribute('data-go'); render(); window.scrollTo(0,0); }
+});
+function setView(v){
+  document.getElementById('stage').className = 'stage ' + v;
+  document.getElementById('bm').setAttribute('aria-pressed', v==='mobile');
+  document.getElementById('bt').setAttribute('aria-pressed', v==='tablet');
+}
+document.getElementById('bm').onclick = function(){setView('mobile')};
+document.getElementById('bt').onclick = function(){setView('tablet')};
+render();
+</script>
+</body>
+</html>
