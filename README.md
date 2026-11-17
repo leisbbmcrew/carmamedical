@@ -7,7 +7,7 @@ App di gestione palestra. Questa versione contiene la **home** con le sezioni pr
 | Sezione | Descrizione | Stato |
 |---|---|---|
 | Utenti | Elenco con anagrafica, ricerca, creazione ed eliminazione | Disponibile |
-| Schede allenamento | Creazione e assegnazione dei programmi | Da sviluppare |
+| Schede allenamento | Elenco utenti; per ogni utente crea ed elimina schede, storico con download e andamento degli esercizi | Disponibile (struttura delle schede provvisoria) |
 | Calendario | Corsi, appuntamenti e prenotazioni | Da sviluppare |
 | Eventi | Open day, workshop e iniziative | Da sviluppare |
 
@@ -74,3 +74,14 @@ Fuori da claude.ai la pagina legge il documento con Tesseract.js, un programma d
 - La pagina va aperta da un indirizzo web (GitHub Pages o un server locale), non con doppio clic sul file: i browser bloccano il motore di lettura sui file aperti da disco.
 
 Se un dato viene letto male, sotto le foto c'è **Mostra testo letto** con quello che il programma ha riconosciuto: serve per capire dove sbaglia. Per cognome, nome, date, numero documento e codice fiscale la lettura si controlla da sola con i caratteri di controllo (riga in basso del documento e ultima lettera del codice fiscale): i valori che non tornano vengono scartati o segnalati.
+
+## Schede allenamento
+
+Tutti gli utenti creati nella sezione Utenti compaiono nell'elenco di Schede allenamento. Toccando un utente si aprono le sue schede:
+
+- **+ / Crea** aggiunge una scheda (nome, data, note, esercizi con serie, ripetizioni e carico in kg).
+- **− / Elimina** attiva la selezione e, dopo conferma, elimina le schede scelte.
+- Toccando una scheda si vede il dettaglio e si può **scaricare** come pagina HTML (apribile e stampabile come PDF). La più recente è segnata come "attuale", le altre sono lo storico.
+- Sotto le schede c'è il campo di ricerca esercizi: si scelgono fino a 4 esercizi e il grafico mostra come cambia il carico massimo scheda dopo scheda.
+
+La struttura delle schede è provvisoria e da definire. Cancellando un utente si cancellano anche le sue schede.
