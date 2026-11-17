@@ -18,7 +18,7 @@ body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-syst
 .stage{display:flex;justify-content:center;padding:0}
 .app{width:100%;background:var(--bg);min-height:calc(100vh - 54px);position:relative;display:flex;flex-direction:column}
 .stage.mobile .app{max-width:400px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
-.stage.tablet .app{max-width:900px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.stage.tablet .app{max-width:1024px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
 header{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
 .logo{width:40px;height:40px;border-radius:12px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:20px}
 header h1{font-size:18px;margin:0;line-height:1.2}
@@ -48,6 +48,43 @@ h2{font-size:22px;margin:0 0 4px}
 .stage.tablet main{padding:28px;padding-bottom:28px}
 .stage.tablet .grid{grid-template-columns:1fr 1fr}
 .stage.tablet .card{min-height:170px}
+.uh{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.uact{display:flex;gap:8px;flex-shrink:0}
+.ab{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:15px;font-weight:600;cursor:pointer;width:42px;height:42px;border-radius:50%;padding:0}
+.ab .i{font-size:26px;line-height:1;font-weight:400}.ab .t{display:none}
+.ab.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.ab.danger{background:#dc2626;border-color:#dc2626;color:#fff}
+.stage.tablet .ab{width:auto;height:auto;border-radius:12px;padding:10px 18px}
+.stage.tablet .ab .i{display:none}.stage.tablet .ab .t{display:inline}
+.search{width:100%;padding:12px 14px;margin-bottom:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit}
+.dbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--brand-soft);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:14px}
+.dbar div{display:flex;gap:8px}
+.dbar button{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.dbar .danger{background:#dc2626;border-color:#dc2626;color:#fff}
+.dbar button:disabled{opacity:.5;cursor:default}
+.urow{display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.urow.sel{border-color:#dc2626}
+.urow input[type=checkbox]{width:20px;height:20px;margin-top:10px;flex-shrink:0;accent-color:#dc2626}
+.av{width:42px;height:42px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-weight:700;flex-shrink:0}
+.cells{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--muted)}
+.cells b{color:var(--text);font-size:16px}
+.cells span{overflow:hidden;text-overflow:ellipsis}
+.uhead{display:none}
+.stage.tablet .uhead{display:grid;padding:0 14px 8px 68px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.stage.tablet .cells{display:grid;grid-template-columns:1.3fr .8fr 1.5fr 1fr 1.7fr 1fr;gap:12px;align-items:center}
+.stage.tablet .uhead{grid-template-columns:1.3fr .8fr 1.5fr 1fr 1.7fr 1fr;gap:12px}
+.stage.tablet .urow{align-items:center}
+.stage.tablet .urow input[type=checkbox]{margin-top:0}
+.stage.tablet .cells{font-size:13px}.stage.tablet .cells b{font-size:15px}
+.stage.tablet .app,.stage.tablet .app{max-width:1024px}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.mbox{background:var(--surface);color:var(--text);border-radius:18px;padding:22px;width:100%;max-width:420px;max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.mbox h3{margin:0 0 4px}.mbox label{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.mbox input{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit}
+.mrow{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.mrow button{padding:10px 18px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
+.mrow .pri{background:var(--brand);border-color:var(--brand);color:#fff}.mrow .danger{background:#dc2626;border-color:#dc2626;color:#fff}
+.empty{text-align:center;color:var(--muted);padding:30px 0}
 /* login: attivare a programma finito */
 #login{display:none;position:absolute;inset:0;z-index:5;background:var(--bg);align-items:center;justify-content:center;padding:24px}
 #login.on{display:flex}
@@ -55,7 +92,7 @@ h2{font-size:22px;margin:0 0 4px}
 .lbox .logo{margin:0 auto;width:64px;height:64px;font-size:30px;border-radius:18px}
 .lbox input{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit}
 .lbox button{padding:12px;border:none;border-radius:12px;background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer}
-@media (min-width:820px){.stage:not(.mobile) .app{max-width:900px}}
+
 </style>
 </head>
 <body>
@@ -104,7 +141,6 @@ var S = [
   {id:'eventi',t:'Eventi',d:'Open day, workshop e iniziative',i:I.ev,c:'var(--c4)',s:'Gestisci eventi'}
 ];
 var cur = 'home';
-function esc(s){return s}
 function render(){
   var m = document.getElementById('main'), h = '';
   if (cur === 'home') {
@@ -115,6 +151,7 @@ function render(){
     h = '<button class="back" data-go="home">← Home</button><h2>'+x.t+'</h2><p class="sub">'+x.d+'</p><div class="panel">Sezione in sviluppo.</div>';
   }
   m.innerHTML = h;
+  if (cur === 'utenti') renderUtenti();
   var items = [{id:'home',t:'Home',i:I.home}].concat(S.map(function(x){return {id:x.id,t:x.id==='schede'?'Schede':x.t,i:x.i}}));
   document.getElementById('tabbar').innerHTML = items.map(function(x){return '<button class="tab" data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+x.t+'</span></button>'}).join('');
   document.getElementById('side').innerHTML = items.map(function(x){var f=x.id==='schede'?'Schede allenamento':x.t;return '<button data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+f+'</span></button>'}).join('');
@@ -129,6 +166,63 @@ function setView(v){
 }
 document.getElementById('bm').onclick = function(){setView('mobile')};
 document.getElementById('bt').onclick = function(){setView('tablet')};
+var uid = 10;
+var U = [
+ {id:1,n:'Marco',c:'Rossi',d:'1985-03-12',cf:'RSSMRC85C12A462X',t:'333 1234567',e:'marco.rossi@email.it',ci:'Ascoli Piceno'},
+ {id:2,n:'Giulia',c:'Bianchi',d:'1992-07-25',cf:'BNCGLI92L65A462K',t:'347 7654321',e:'giulia.bianchi@email.it',ci:'San Benedetto'},
+ {id:3,n:'Luca',c:'Ferrari',d:'1978-11-03',cf:'FRRLCU78S03A462P',t:'320 1122334',e:'luca.ferrari@email.it',ci:'Ascoli Piceno'},
+ {id:4,n:'Sara',c:'Esposito',d:'1999-01-18',cf:'SPSSRA99A58A462R',t:'338 9988776',e:'sara.esposito@email.it',ci:'Offida'},
+ {id:5,n:'Andrea',c:'Conti',d:'1988-09-30',cf:'CNTNDR88P30A462T',t:'349 5566778',e:'andrea.conti@email.it',ci:'Monteprandone'}
+];
+var uq = '', dm = false, sel = {};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fdate(s){if(!s)return '—';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+function filtered(){var q=uq.toLowerCase().trim();return U.filter(function(u){return !q||[u.n,u.c,u.cf,u.t,u.e,u.ci].join(' ').toLowerCase().indexOf(q)>-1})}
+function renderUtenti(){
+  document.getElementById('main').innerHTML =
+   '<div class="uh"><div><h2>Utenti</h2><p class="sub" id="ucount"></p></div><div class="uact">'+
+   '<button class="ab pri" data-act="add" aria-label="Crea utente"><span class="i">+</span><span class="t">Crea</span></button>'+
+   '<button class="ab" id="bdel" data-act="del" aria-label="Elimina utenti"><span class="i">−</span><span class="t">Elimina</span></button></div></div>'+
+   '<input class="search" id="usearch" type="search" placeholder="Cerca per nome, codice fiscale, email…" value="'+esc(uq)+'">'+
+   '<div id="dbar"></div><div id="ulist"></div>';
+  document.getElementById('usearch').addEventListener('input',function(e){uq=e.target.value;listUtenti()});
+  listUtenti();
+}
+function listUtenti(){
+  var L = filtered(), n = Object.keys(sel).length;
+  document.getElementById('ucount').textContent = L.length + (L.length===1?' utente':' utenti');
+  document.getElementById('dbar').innerHTML = dm ? '<div class="dbar"><span>Seleziona gli utenti da eliminare ('+n+')</span><div><button data-act="cancel">Annulla</button><button class="danger" data-act="confirmdel"'+(n?'':' disabled')+'>Elimina</button></div></div>' : '';
+  document.getElementById('bdel').classList.toggle('danger', dm);
+  var h = L.length ? '<div class="uhead"><span>Nominativo</span><span>Nascita</span><span>Codice fiscale</span><span>Telefono</span><span>Email</span><span>Città</span></div>' : '<div class="empty">Nessun utente trovato.</div>';
+  h += L.map(function(u){
+    return '<div class="urow'+(sel[u.id]?' sel':'')+'" data-row="'+u.id+'">'+(dm?'<input type="checkbox"'+(sel[u.id]?' checked':'')+' aria-label="Seleziona">':'')+
+    '<div class="av">'+esc(u.n[0]+u.c[0]).toUpperCase()+'</div><div class="cells"><b>'+esc(u.n+' '+u.c)+'</b><span>Nato il '+fdate(u.d)+'</span><span>'+esc(u.cf||'—')+'</span><span>'+esc(u.t||'—')+'</span><span>'+esc(u.e||'—')+'</span><span>'+esc(u.ci||'—')+'</span></div></div>';
+  }).join('');
+  document.getElementById('ulist').innerHTML = h;
+}
+function modal(html){var m=document.getElementById('modal');if(!m){m=document.createElement('div');m.id='modal';m.className='modal';document.body.appendChild(m)}m.innerHTML='<div class="mbox">'+html+'</div>'}
+function closeModal(){var m=document.getElementById('modal');if(m)m.remove()}
+function addForm(){
+  var f=[['n','Nome'],['c','Cognome'],['d','Data di nascita','date'],['cf','Codice fiscale'],['t','Telefono','tel'],['e','Email','email'],['ci','Città']];
+  modal('<h3>Nuovo utente</h3>'+f.map(function(x){return '<label>'+x[1]+(x[0]==='n'||x[0]==='c'?' *':'')+'<input id="f_'+x[0]+'" type="'+(x[2]||'text')+'"></label>'}).join('')+
+   '<div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" data-act="msave">Salva</button></div>');
+}
+document.addEventListener('click',function(e){
+  var a=e.target.closest('[data-act]'),r=e.target.closest('[data-row]');
+  if(a){var k=a.getAttribute('data-act');
+    if(k==='add')addForm();
+    else if(k==='mclose')closeModal();
+    else if(k==='msave'){var o={id:++uid};['n','c','d','cf','t','e','ci'].forEach(function(x){o[x]=document.getElementById('f_'+x).value.trim()});
+      if(!o.n||!o.c){document.getElementById(o.n?'f_c':'f_n').focus();return}
+      o.cf=o.cf.toUpperCase();U.unshift(o);closeModal();listUtenti()}
+    else if(k==='del'){dm=!dm;sel={};listUtenti()}
+    else if(k==='cancel'){dm=false;sel={};listUtenti()}
+    else if(k==='confirmdel'){var n=Object.keys(sel).length;if(!n)return;modal('<h3>Elimina utenti</h3><p>Vuoi eliminare '+n+(n===1?' utente selezionato':' utenti selezionati')+'? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="dodel">Elimina</button></div>')}
+    else if(k==='dodel'){U=U.filter(function(u){return !sel[u.id]});sel={};dm=false;closeModal();listUtenti()}
+    return}
+  if(r&&dm){var id=r.getAttribute('data-row');if(sel[id])delete sel[id];else sel[id]=1;listUtenti()}
+});
+setView(window.innerWidth>=768?'tablet':'mobile');
 render();
 </script>
 </body>

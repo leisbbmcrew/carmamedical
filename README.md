@@ -6,7 +6,7 @@ App di gestione palestra. Questa versione contiene la **home** con le sezioni pr
 
 | Sezione | Descrizione | Stato |
 |---|---|---|
-| Utenti | Iscritti, anagrafica e abbonamenti | Da sviluppare |
+| Utenti | Elenco con anagrafica, ricerca, creazione ed eliminazione | Disponibile |
 | Schede allenamento | Creazione e assegnazione dei programmi | Da sviluppare |
 | Calendario | Corsi, appuntamenti e prenotazioni | Da sviluppare |
 | Eventi | Open day, workshop e iniziative | Da sviluppare |
