@@ -96,6 +96,9 @@ h2{font-size:22px;margin:0 0 4px}
 .status{font-size:13px;color:var(--muted)}
 .dc{font-style:normal;font-size:11px;font-weight:600;color:var(--brand);background:var(--brand-soft);border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:middle}
 .det{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:14px}.det dt{color:var(--muted)}.det dd{margin:0;word-break:break-word}
+.btns{display:flex;gap:6px}
+.pb{flex:1;text-align:center;padding:9px 6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font-size:13px;cursor:pointer}
+.pb.cam{background:var(--brand);border-color:var(--brand);color:#fff}
 /* login: attivare a programma finito */
 #login{display:none;position:absolute;inset:0;z-index:5;background:var(--bg);align-items:center;justify-content:center;padding:24px}
 #login.on{display:flex}
@@ -233,11 +236,14 @@ function modal(html){var m=document.getElementById('modal');if(!m){m=document.cr
 function closeModal(){var m=document.getElementById('modal');if(m)m.remove()}
 function st(id,t){var e=document.getElementById(id);if(e)e.textContent=t}
 var FIELDS=[['n','Nome'],['c','Cognome'],['d','Data di nascita','date'],['cf','Codice fiscale'],['t','Telefono','tel'],['e','Email','email'],['ci','Città di residenza'],['dn','N. documento'],['ds','Scadenza documento','date']];
+function dropHtml(side,label){
+  return '<div class="drop">'+label+'<div class="btns"><label class="pb cam">📷 Scatta foto<input type="file" accept="image/*" capture="environment" data-side="'+side+'" hidden></label>'+
+   '<label class="pb">Scegli file<input type="file" accept="image/*" data-side="'+side+'" hidden></label></div><img id="pv_'+side+'" alt="Anteprima '+label.toLowerCase()+'"></div>';
+}
 function addForm(){
   draft={front:null,back:null};
   modal('<h3>Nuovo utente</h3><div class="idbox"><b>Documento d’identità</b>'+
-   '<div class="idrow"><label class="drop">Fronte<input type="file" accept="image/*" data-side="front"><img id="pv_front" alt=""></label>'+
-   '<label class="drop">Retro<input type="file" accept="image/*" data-side="back"><img id="pv_back" alt=""></label></div>'+
+   '<div class="idrow">'+dropHtml('front','Fronte')+dropHtml('back','Retro')+'</div>'+
    '<button id="bread" data-act="read" disabled>Leggi dati dal documento</button><div class="status" id="rstat">'+(caps.sample?'Carica fronte e/o retro per compilare i campi in automatico.':'Lettura automatica non disponibile qui: compila i campi a mano.')+'</div></div>'+
    FIELDS.map(function(x){return '<label>'+x[1]+(x[0]==='n'||x[0]==='c'?' *':'')+'<input id="f_'+x[0]+'" type="'+(x[2]||'text')+'"></label>'}).join('')+
    '<div class="status" id="sstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="bsave" data-act="msave">Salva</button></div>');
@@ -308,7 +314,7 @@ async function doDelete(){
   if(!dbCol)U=U.filter(function(u){return !sel[u.id]});
   sel={};dm=false;closeModal();listUtenti();
 }
-document.addEventListener('change',function(e){var t=e.target;if(t.getAttribute&&t.getAttribute('data-side')&&t.files&&t.files[0])pickFile(t.getAttribute('data-side'),t.files[0])});
+document.addEventListener('change',function(e){var t=e.target;if(t.getAttribute&&t.getAttribute('data-side')&&t.files&&t.files[0]){var f=t.files[0];pickFile(t.getAttribute('data-side'),f);t.value=''}});
 document.addEventListener('click',function(e){
   var a=e.target.closest('[data-act]'),r=e.target.closest('[data-row]');
   if(a){var k=a.getAttribute('data-act');

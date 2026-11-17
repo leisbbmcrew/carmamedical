@@ -54,7 +54,7 @@ Per pubblicarlo online: su GitHub, **Settings → Pages**, scegliere il branch `
 
 ## Documento d'identità (scheda Utenti)
 
-Alla creazione di un utente si possono caricare fronte e retro del documento. Il sistema legge i dati e compila i campi (da controllare prima di salvare); le foto restano salvate e si scaricano dalla scheda dell'utente (tocco sulla riga).
+Alla creazione di un utente si può scattare la foto o scegliere un file per fronte e retro del documento. Il sistema legge i dati e compila i campi (da controllare prima di salvare); le foto restano salvate e si scaricano dalla scheda dell'utente (tocco sulla riga).
 
 - Nella versione pubblicata su claude.ai la lettura dei dati, il salvataggio e il database funzionano grazie al runtime della pagina.
 - Aprendo `index.html` fuori da claude.ai (per esempio su GitHub Pages) la lettura automatica non è disponibile e i dati restano solo in memoria fino al ricaricamento: per un uso reale servono un server con database, archivio file protetto e un servizio di lettura documenti (con la chiave API sul server, mai nella pagina).
