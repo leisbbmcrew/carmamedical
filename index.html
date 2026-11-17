@@ -7,36 +7,28 @@
 <style>
 :root{
   --bg:#f3f7f6;--surface:#fff;--text:#12302b;--muted:#5d7872;--line:#dbe6e3;--brand:#0f766e;--brand-soft:#d9f0ec;
-  /* 20 Colori distinti */
   --c1:#0f766e; --c2:#c2410c; --c3:#1d4ed8; --c4:#7e22ce; --c5:#be123c;
   --c6:#0369a1; --c7:#15803d; --c8:#a21caf; --c9:#b45309; --c10:#4338ca;
-  --c11:#854d0e; --c12:#166534; --c13:#a16207; --c14:#9f1239; --c15:#4f46e5;
-  --c16:#0f5132; --c17:#851a5b; --c18:#1e3a8a; --c19:#9a3412; --c20:#115e59;
-
+  --c11:#ca8a04; --c12:#059669; --c13:#d97706; --c14:#e11d48; --c15:#6366f1;
+  --c16:#0d9488; --c17:#c026d3; --c18:#2563eb; --c19:#ea580c; --c20:#475569;
   color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#0d1a18;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;
-    /* Tonalità adattate per dark mode */
-    --c1:#2dd4bf; --c2:#fb923c; --c3:#60a5fa; --c4:#c084fc; --c5:#f43f5e;
-    --c6:#38bdf8; --c7:#4ade80; --c8:#e879f9; --c9:#f97316; --c10:#818cf8;
-    --c11:#facc15; --c12:#4ade80; --c13:#fbbF24; --c14:#fb7185; --c15:#a5b4fc;
-    --c16:#6ee7b7; --c17:#f0abfc; --c18:#c7d2fe; --c19:#ffedd5; --c20:#5eead4;
+    --c1:#2dd4bf; --c2:#fb923c; --c3:#60a5fa; --c4:#c084fc; --c5:#fb7185;
+    --c6:#38bdf8; --c7:#4ade80; --c8:#e879f9; --c9:#fbbf24; --c10:#818cf8;
+    --c11:#facc15; --c12:#34d399; --c13:#f59e0b; --c14:#f43f5e; --c15:#a5b4fc;
+    --c16:#5eead4; --c17:#f0abfc; --c18:#93c5fd; --c19:#fdba74; --c20:#94a3b8;
     color-scheme:dark
   }
 }
-/* Stili per forced colors mode (es. Windows high contrast) */
-@media (forced-colors: active) {
-    .cc i { --col: CanvasText !important; }
-}
-
 :root[data-theme="dark"]{
   --bg:#0d1a18;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;
-  --c1:#2dd4bf; --c2:#fb923c; --c3:#60a5fa; --c4:#c084fc; --c5:#f43f5e;
-  --c6:#38bdf8; --c7:#4ade80; --c8:#e879f9; --c9:#f97316; --c10:#818cf8;
-  --c11:#facc15; --c12:#4ade80; --c13:#fbbF24; --c14:#fb7185; --c15:#a5b4fc;
-  --c16:#6ee7b7; --c17:#f0abfc; --c18:#c7d2fe; --c19:#ffedd5; --c20:#5eead4;
+  --c1:#2dd4bf; --c2:#fb923c; --c3:#60a5fa; --c4:#c084fc; --c5:#fb7185;
+  --c6:#38bdf8; --c7:#4ade80; --c8:#e879f9; --c9:#fbbf24; --c10:#818cf8;
+  --c11:#facc15; --c12:#34d399; --c13:#f59e0b; --c14:#f43f5e; --c15:#a5b4fc;
+  --c16:#5eead4; --c17:#f0abfc; --c18:#93c5fd; --c19:#fdba74; --c20:#94a3b8;
   color-scheme:dark
 }
 *{box-sizing:border-box}
@@ -106,7 +98,6 @@ h2{font-size:22px;margin:0 0 4px}
 .stage.tablet .urow{align-items:center}
 .stage.tablet .urow input[type=checkbox]{margin-top:0}
 .stage.tablet .cells{font-size:13px}.stage.tablet .cells b{font-size:15px}
-.stage.tablet .app,.stage.tablet .app{max-width:1024px}
 .modal{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
 .mbox{background:var(--surface);color:var(--text);border-radius:18px;padding:22px;width:100%;max-width:420px;max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
 .mbox h3{margin:0 0 4px}.mbox label{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
@@ -226,11 +217,11 @@ h2{font-size:22px;margin:0 0 4px}
 .yd.today{background:var(--brand);color:#fff;font-weight:700}
 .mbox select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit}
 .frow{display:flex;gap:8px}.frow label{flex:1;min-width:0}
-.crow{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-.mbox label.cc{flex-direction:row;cursor:pointer;width:32px;height:32px;padding:0;}
+.crow{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.mbox label.cc{flex-direction:row;cursor:pointer;width:30px;height:30px}
 .cc input{display:none}
-.cc i{display:block;width:100%;height:100%;border-radius:50%;background:var(--col);border:3px solid transparent;box-shadow:inset 0 0 0 2px var(--surface);transition:border-color .2s}
-.cc input:checked+i{border-color:var(--text)}
+.cc i{display:block;width:30px;height:30px;border-radius:50%;background:var(--col);border:3px solid transparent;box-shadow:inset 0 0 0 2px var(--surface);transition:transform .12s,border-color .12s}
+.cc input:checked+i{border-color:var(--text);transform:scale(1.1)}
 .cul{max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .mbox label.cur{flex-direction:row;align-items:center;gap:10px;font-size:14px;color:var(--text);padding:7px 10px;border-bottom:1px solid var(--line);cursor:pointer}
 .cur:last-child{border-bottom:none}
@@ -245,7 +236,6 @@ h2{font-size:22px;margin:0 0 4px}
 .lbox .logo{margin:0 auto;width:64px;height:64px;font-size:30px;border-radius:18px}
 .lbox input{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit}
 .lbox button{padding:12px;border:none;border-radius:12px;background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer}
-
 </style>
 </head>
 <body>
@@ -499,7 +489,7 @@ function loadTess(){
   return addScript(TESS_BASE+'tesseract.min.js').then(function(){TESS_LOCAL=true;return window.Tesseract})
    .catch(function(){return addScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js').then(function(){return window.Tesseract})});
 }
-async function prep(blob,o){return new Promise(function(ok,ko){
+function prep(blob,o){return new Promise(function(ok,ko){
   var im=new Image(),u=URL.createObjectURL(blob);
   im.onerror=function(){ko(new Error('img'))};
   im.onload=function(){
@@ -615,6 +605,7 @@ document.addEventListener('click',function(e){
     return}
   if(r){var id=r.getAttribute('data-row');if(dm){if(sel[id])delete sel[id];else sel[id]=1;listUtenti()}else openUser(id)}
 });
+// ---- Schede allenamento ----
 var EXLIST=['Panca piana','Squat','Stacco da terra','Military press','Rematore con bilanciere','Trazioni','Lat machine','Leg press','Curl con bilanciere','Pushdown ai cavi','Affondi','Plank'];
 function mkS(id,u,nome,data,es){return {id:'d'+id,uid:String(u),nome:nome,data:data,note:'',es:es.map(function(x){return {n:x[0],s:x[1],r:x[2],k:x[3],g:x[4]}})}}
 var SCH=[
@@ -798,12 +789,14 @@ document.addEventListener('click',function(e){
   var sr=e.target.closest('[data-srow]');
   if(sr){var id=sr.getAttribute('data-srow');if(sdm){if(ssel[id])delete ssel[id];else ssel[id]=1;listSchede()}else viewScheda(id)}
 });
-MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-MESI3=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
-GIORNI=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
-GIORNI3=['dom','lun','mar','mer','gio','ven','sab'];
-GLET=['L','M','M','G','V','S','D'];
-HH=56, SNAP=15, CCOL=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)','var(--c9)','var(--c10)','var(--c11)','var(--c12)','var(--c13)','var(--c14)','var(--c15)','var(--c16)','var(--c17)','var(--c18)','var(--c19)','var(--c20)'];
+// ---- Calendario ----
+var MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+var MESI3=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+var GIORNI=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+var GIORNI3=['dom','lun','mar','mer','gio','ven','sab'];
+var GLET=['L','M','M','G','V','S','D'];
+var HH=56, SNAP=15;
+var CCOL=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)','var(--c6)','var(--c7)','var(--c8)','var(--c9)','var(--c10)','var(--c11)','var(--c12)','var(--c13)','var(--c14)','var(--c15)','var(--c16)','var(--c17)','var(--c18)','var(--c19)','var(--c20)'];
 var cuid=100, calV='day', calD=new Date(), calScroll=null, dbCal=null, cdrag=null, calNoClick=0, fsel={}, fid=null;
 function pad(n){return ('0'+n).slice(-2)}
 function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
@@ -928,7 +921,6 @@ function monthHtml(){
   var h='<div class="mgrid">'+GLET.map(function(l){return '<div class="mw">'+l+'</div>'}).join('');
   for(var i=0;i<rows*7;i++){
     var d=addDays(start,i),s=iso(d),L=CAL.filter(function(x){return x.day===s}).sort(function(a,b){return a.s-b.s});
-    var nu={};L.forEach(function(x){(x.u||[]).forEach(function(u){nu[u]=1})});
     var dots=L.slice(0,4).map(function(x){return '<i style="--col:'+CCOL[x.c||0]+'"></i>'}).join('');
     var chips=L.slice(0,3).map(function(x){return '<span class="mchip" style="--col:'+CCOL[x.c||0]+'">'+hm(x.s)+' '+esc(ctitle(x))+'</span>'}).join('')+(L.length>3?'<span class="mchip" style="--col:var(--muted)">+'+(L.length-3)+' altre</span>':'');
     h+='<button class="mday'+(d.getMonth()!==mo?' out':'')+(s===today?' today':'')+(s===sel?' sel':'')+'" data-cd="'+s+'" aria-label="'+esc(dayLong(d))+(L.length?', '+L.length+' voci':'')+'"><span class="n">'+d.getDate()+'</span>'+(L.length?'<span class="mdots">'+dots+'</span>'+chips:'')+'</button>';
@@ -987,41 +979,18 @@ function calForm(id,pre){
    '<label>Titolo<input id="c_t" type="text" placeholder="es. Yoga, Spinning…"></label>'+
    '<label>Data<input id="c_d" type="date"></label>'+
    '<div class="frow"><label>Inizio<input id="c_s" type="time" step="900"></label><label>Fine<input id="c_e" type="time" step="900"></label></div>'+
-   '<div><div style="font-size:13px;color:var(--muted)">Colore</div><div class="crow" id="c_c_radio">'+
-   /* I radio buttons dei colori verranno inseriti qui via JS */
+   '<div><div style="font-size:13px;color:var(--muted)">Colore</div><div class="crow">'+
+   CCOL.map(function(c,i){return '<label class="cc" style="--col:'+c+'" title="Colore '+(i+1)+'"><input type="radio" name="c_c" value="'+i+'"><i></i></label>'}).join('')+
    '</div></div>'+
    '<label>Note<input id="c_n" type="text"></label>'+
    '<b id="c_uc" style="font-size:14px;margin-top:4px"></b>'+
    '<input class="search" id="c_q" type="search" placeholder="Cerca utente…" style="margin:0"><div class="cul" id="c_ul"></div>'+
    '<div class="status" id="c_st"></div>'+
    '<div class="mrow">'+(it?'<button class="danger" data-act="c_del" data-id="'+esc(it.id)+'" style="margin-right:auto">Elimina</button>':'')+'<button data-act="mclose">Annulla</button><button class="pri" id="c_sv" data-act="c_save">Salva</button></div>');
-
-  // Generazione dinamica dei 20 radio buttons
-  const radioContainer = document.getElementById('c_c_radio');
-  CCOL.forEach((colorVar, index) => {
-      const colorIndex = index; // 0-19
-      const displayNumber = index + 1; // 1-20
-      const label = document.createElement('label');
-      label.className = 'cc';
-      label.style.setProperty('--col', colorVar);
-      label.title = `Colore ${displayNumber}`;
-
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = 'c_c';
-      input.value = colorIndex;
-      if (parseInt(o.c) === colorIndex) input.checked = true;
-
-      const span = document.createElement('i');
-
-      label.appendChild(input);
-      label.appendChild(span);
-      radioContainer.appendChild(label);
-  });
-
   document.querySelector('#modal .mbox').classList.add('wide');
   document.getElementById('c_k').value=o.k;document.getElementById('c_t').value=o.t||'';document.getElementById('c_d').value=o.day;
   document.getElementById('c_s').value=hm(o.s);document.getElementById('c_e').value=hm(o.e);document.getElementById('c_n').value=o.note||'';
+  var rad=document.querySelector('input[name=c_c][value="'+(o.c||0)+'"]');if(rad)rad.checked=true;
   cuCount();culRefresh();
 }
 async function saveCalForm(){
@@ -1087,4 +1056,62 @@ document.addEventListener('pointerdown',function(e){
   if(e.pointerType==='mouse'&&e.button!==0)return;
   var it=findC(ev.getAttribute('data-ci'));if(!it)return;
   var body=ev.closest('.tlb'),col=ev.parentNode;
-  var d=cdrag={el:ev,it:it,mode:e.target.closest('.rh')?'resize':'move',pid:e.pointerId,x0:e.clientX,y0:e.clientY,cx:e.clientX,cy:e.clientY,active:false
+  var d=cdrag={el:ev,it:it,mode:e.target.closest('.rh')?'resize':'move',pid:e.pointerId,x0:e.clientX,y0:e.clientY,cx:e.clientX,cy:e.clientY,active:false,touch:e.pointerType!=='mouse',
+    s0:it.s,e0:it.e,day0:it.day,s:it.s,e:it.e,day:it.day,body:body,cols:[].slice.call(body.querySelectorAll('.col')),colLeft:col.getBoundingClientRect().left,grab:e.clientY-ev.getBoundingClientRect().top};
+  try{ev.setPointerCapture(e.pointerId)}catch(_){}
+  if(d.touch&&d.mode==='move')d.tm=setTimeout(function(){if(cdrag===d)dragOn(d)},380);
+});
+document.addEventListener('pointermove',function(e){
+  var d=cdrag;if(!d||e.pointerId!==d.pid)return;
+  d.cx=e.clientX;d.cy=e.clientY;
+  if(!d.active){
+    if(Math.abs(e.clientX-d.x0)+Math.abs(e.clientY-d.y0)<(d.touch?10:4))return;
+    if(d.touch&&d.mode==='move'){clearTimeout(d.tm);cdrag=null;return}
+    dragOn(d);
+  }
+  calApply(d);
+});
+document.addEventListener('pointerup',function(e){endDrag(e,true)});
+document.addEventListener('pointercancel',function(e){endDrag(e,false)});
+document.addEventListener('touchmove',function(e){if(cdrag&&cdrag.active&&e.cancelable)e.preventDefault()},{passive:false});
+document.addEventListener('contextmenu',function(e){if(e.target.closest&&e.target.closest('.ev'))e.preventDefault()});
+setInterval(function(){[].forEach.call(document.querySelectorAll('.now'),function(n){n.style.top=nowY()+'px'})},60000);
+document.addEventListener('input',function(e){
+  var id=e.target.id;
+  if(id==='c_q'||id==='c_d'||id==='c_s'||id==='c_e')culRefresh();
+});
+document.addEventListener('change',function(e){
+  var t=e.target,u=t.getAttribute&&t.getAttribute('data-cu');
+  if(u!=null&&u!==''){if(t.checked)fsel[u]=1;else delete fsel[u];cuCount()}
+});
+document.addEventListener('click',function(e){
+  var a=e.target.closest('[data-act]');
+  if(a){var k=a.getAttribute('data-act');
+    if(k==='c_view'){calV=a.getAttribute('data-v');drawCal()}
+    else if(k==='c_prev')calShift(-1);
+    else if(k==='c_next')calShift(1);
+    else if(k==='c_today'){calD=new Date();calScroll=null;drawCal()}
+    else if(k==='c_add')calForm(null,{day:iso(calD)});
+    else if(k==='c_addday')calForm(null,{day:iso(calD)});
+    else if(k==='c_openday'){calV='day';drawCal()}
+    else if(k==='c_save')saveCalForm();
+    else if(k==='c_del'){var id=a.getAttribute('data-id'),it=findC(id);modal('<h3>Elimina voce</h3><p>Vuoi eliminare «'+esc(it?ctitle(it):'')+'»? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="c_dodel" data-id="'+esc(id)+'">Elimina</button></div>')}
+    else if(k==='c_dodel')delCal(a.getAttribute('data-id'));
+    return;
+  }
+  if(cur!=='calendario')return;
+  if(Date.now()-calNoClick<400)return;
+  var cm=e.target.closest('[data-cm]');
+  if(cm){calD=new Date(calD.getFullYear(),+cm.getAttribute('data-cm'),1);calV='month';drawCal();return}
+  var cd=e.target.closest('[data-cd]');
+  if(cd){goDay(cd.getAttribute('data-cd'));return}
+  var ci=e.target.closest('[data-ci]');
+  if(ci){calForm(ci.getAttribute('data-ci'));return}
+  var col=e.target.closest('.col');
+  if(col){var y=e.clientY-col.getBoundingClientRect().top,s=Math.max(0,Math.min(23*60,Math.floor(y/HH*2)*30));calForm(null,{day:col.getAttribute('data-day'),s:s,e:Math.min(1440,s+60)})}
+});
+setView(window.innerWidth>=768?'tablet':'mobile');
+render();
+</script>
+</body>
+</html>
