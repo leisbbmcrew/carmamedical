@@ -10,6 +10,7 @@ App di gestione palestra. Questa versione contiene la **home** con le sezioni pr
 | Schede allenamento | Elenco utenti; per ogni utente crea ed elimina schede, storico con download e andamento degli esercizi | Disponibile (struttura delle schede provvisoria) |
 | Calendario | Viste giorno, settimana, mese e anno; lezioni e accessi con gli utenti assegnati alle fasce orarie | Disponibile |
 | Eventi | Open day, workshop e iniziative | Da sviluppare |
+| Avvisi | Pacchetti in esaurimento e utenti che non rinnovano | Disponibile |
 
 ## Visualizzazione
 
@@ -128,6 +129,12 @@ In alto tre riquadri: ingressi **rimasti** (somma dei pacchetti dell'utente), in
 
 **Registro ingressi.** Con **+ Ingresso** si registra un ingresso (data e ora sono già quelle di adesso, l'uscita è facoltativa). Il campo *Scala la lezione da* propone in automatico il pacchetto più vecchio con lezioni disponibili; si può scegliere un altro pacchetto o *Nessun pacchetto*. Toccando una riga si modifica o si elimina; con **Elimina** se ne selezionano più d'uno (la lezione torna nel pacchetto). In fondo, **Prenotazioni in calendario** elenca le prossime voci dell'utente; toccandone una si apre quel giorno nel Calendario.
 
-**Avviso in home.** Quando un pacchetto ha **3 lezioni o meno** (o è esaurito) compare in cima alla home un avviso giallo (rosso se esaurito) con i nomi degli utenti che lo usano; toccandolo si apre la scheda ingressi. L'avviso non compare se tutti gli utenti di quel pacchetto ne hanno già uno più recente. La soglia è la costante `SOGLIA` in `index.html`.
+**Avviso in home.** Quando un pacchetto ha **3 lezioni o meno** (o è esaurito) compare in cima alla home un avviso giallo (rosso se esaurito) con i nomi degli utenti che lo usano. Toccando l'avviso si apre la scheda ingressi; con **Ok** l'avviso si chiude dalla home (resta nella sezione Avvisi) e ricompare solo se cambia il numero di lezioni rimaste. L'avviso non compare per gli utenti che hanno già un pacchetto più recente o che non rinnovano. La soglia è la costante `SOGLIA` in `index.html`.
+
+## Avvisi
+
+Sezione nel menu, dopo Eventi, con un numero rosso quando ci sono avvisi attivi. Elenca tutti i pacchetti in esaurimento (anche quelli chiusi con Ok in home), con gli utenti che li usano.
+
+**Non rinnova.** Accanto a ogni utente c'è il tasto **Non rinnova** (c'è anche nella sua scheda ingressi): l'utente esce dagli avvisi e compare nell'elenco *Non rinnovano* di questa sezione e con l'etichetta "non rinnova" nell'elenco Utenti. Si riattiva da solo quando gli viene caricato un nuovo pacchetto, oppure a mano con **Riattiva**.
 
 Cancellando un utente si cancellano anche i suoi ingressi e lo si toglie dai pacchetti condivisi (un pacchetto senza più utenti viene eliminato). Eliminando un pacchetto, gli ingressi già registrati restano nel registro senza pacchetto. Come per le altre sezioni, fuori da claude.ai pacchetti e ingressi restano in memoria fino al ricaricamento della pagina; all'apertura ci sono alcuni dati di esempio.

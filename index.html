@@ -242,6 +242,21 @@ h2{font-size:22px;margin:0 0 4px}
 .alert.out i{background:#ef4444}
 .alert span{flex:1;min-width:0}.alert b{display:block;font-size:15px}.alert small{font-size:13px}
 .alert em{font-style:normal;font-size:22px}
+
+/* avvisi */
+.tab{position:relative}.stage.tablet .side button{position:relative}
+.bdg{position:absolute;top:0;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;font-style:normal}
+.bdg[hidden]{display:none}
+.stage.tablet .side .bdg{position:static;margin-left:auto}
+.alert{display:flex;align-items:center;gap:8px;background:#fef3c7;border:1px solid #f59e0b;color:#78350f;border-radius:14px;padding:8px 8px 8px 12px}
+.alert .alb{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-align:left;background:none;border:none;color:inherit;font:inherit;cursor:pointer;padding:4px 0}
+.alert .ok{flex-shrink:0;border:1px solid currentColor;background:none;color:inherit;font:inherit;font-weight:700;border-radius:10px;padding:8px 16px;cursor:pointer}
+.avc{background:var(--surface);border:1px solid var(--line);border-left:5px solid #f59e0b;border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.avc.out{border-left-color:#ef4444}
+.avh{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}.avh b{font-size:16px}.avh small{color:var(--muted);font-size:13px}
+.avu{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+.avn{background:none;border:none;color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer;padding:6px 0;min-width:0}
+.avu .pb{flex:none;padding:8px 12px}
 /* login: attivare a programma finito */
 #login{display:none;position:absolute;inset:0;z-index:5;background:var(--bg);align-items:center;justify-content:center;padding:24px}
 #login.on{display:flex}
@@ -289,20 +304,22 @@ var I = {
   users:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.8a3.5 3.5 0 010 6.4M18 14.4c2 .7 3.5 2.5 3.5 5.6"/></svg>',
   plan:'<svg viewBox="0 0 24 24"><path d="M2 9v6M5 6v12M19 6v12M22 9v6M5 12h14"/></svg>',
   cal:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
-  ev:'<svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>'
+  ev:'<svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>',
+  bell:'<svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0112 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9zM10 20a2 2 0 004 0"/></svg>'
 };
 var S = [
   {id:'utenti',t:'Utenti',d:'Iscritti, anagrafica e abbonamenti',i:I.users,c:'var(--c1)',s:'Gestisci iscritti'},
   {id:'schede',t:'Schede allenamento',d:'Crea e assegna programmi di allenamento',i:I.plan,c:'var(--c2)',s:'Gestisci schede'},
   {id:'calendario',t:'Calendario',d:'Corsi, appuntamenti e prenotazioni',i:I.cal,c:'var(--c3)',s:'Apri calendario'},
-  {id:'eventi',t:'Eventi',d:'Open day, workshop e iniziative',i:I.ev,c:'var(--c4)',s:'Gestisci eventi'}
+  {id:'eventi',t:'Eventi',d:'Open day, workshop e iniziative',i:I.ev,c:'var(--c4)',s:'Gestisci eventi'},
+  {id:'avvisi',t:'Avvisi',d:'Ingressi in esaurimento e rinnovi',i:I.bell,c:'#dc2626',s:'Apri avvisi'}
 ];
 var cur = 'home';
 function render(){
   var m = document.getElementById('main'), h = '';
   if (cur === 'home') {
     h = '<h2>Benvenuto</h2><p class="sub">Scegli una sezione per iniziare.</p>'+alertsHtml()+'<div class="grid">' +
-      S.map(function(x){return '<button class="card" style="--col:'+x.c+'" data-go="'+x.id+'"><div class="ic">'+x.i+'</div><h3>'+x.t+'</h3><p>'+x.d+'</p><span class="stat">'+x.s+' →</span></button>'}).join('') + '</div>';
+      S.map(function(x){return '<button class="card" style="--col:'+x.c+'" data-go="'+x.id+'"><div class="ic">'+x.i+'</div><h3>'+x.t+'</h3><p>'+x.d+'</p><span class="stat">'+(x.id==='avvisi'?avvStat():x.s)+' →</span></button>'}).join('') + '</div>';
   } else {
     var x = S.filter(function(y){return y.id===cur})[0];
     h = '<button class="back" data-go="home">← Home</button><h2>'+x.t+'</h2><p class="sub">'+x.d+'</p><div class="panel">Sezione in sviluppo.</div>';
@@ -310,10 +327,11 @@ function render(){
   m.innerHTML = h;
   if (cur === 'utenti') renderUtenti();
   if (cur === 'schede') renderSchede();
+  if (cur === 'avvisi') renderAvvisi();
   if (cur === 'calendario') renderCal();
   var items = [{id:'home',t:'Home',i:I.home}].concat(S.map(function(x){return {id:x.id,t:x.id==='schede'?'Schede':x.t,i:x.i}}));
-  document.getElementById('tabbar').innerHTML = items.map(function(x){return '<button class="tab" data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+x.t+'</span></button>'}).join('');
-  document.getElementById('side').innerHTML = items.map(function(x){var f=x.id==='schede'?'Schede allenamento':x.t;return '<button data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+f+'</span></button>'}).join('');
+  document.getElementById('tabbar').innerHTML = items.map(function(x){return '<button class="tab" data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+x.t+'</span>'+bdgHtml(x.id)+'</button>'}).join('');
+  document.getElementById('side').innerHTML = items.map(function(x){var f=x.id==='schede'?'Schede allenamento':x.t;return '<button data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+f+'</span>'+bdgHtml(x.id)+'</button>'}).join('');
 }
 document.addEventListener('click', function(e){
   var b = e.target.closest('[data-go]'); if (b) { cur = b.getAttribute('data-go'); iuid = null; render(); window.scrollTo(0,0); }
@@ -398,7 +416,7 @@ function listUtenti(){
   var h = L.length ? '<div class="uhead"><span>Nominativo</span><span>Nascita</span><span>Codice fiscale</span><span>Telefono</span><span>Email</span><span>Città</span></div>' : '<div class="empty">Nessun utente trovato.</div>';
   h += L.map(function(u){
     return '<div class="urow'+(sel[u.id]?' sel':'')+'" data-row="'+esc(u.id)+'">'+(dm?'<input type="checkbox"'+(sel[u.id]?' checked':'')+' aria-label="Seleziona">':'')+
-    '<div class="av">'+esc((u.n[0]||'')+(u.c[0]||'')).toUpperCase()+'</div><div class="cells"><b>'+esc(u.n+' '+u.c)+(hasDoc(u)?' <i class="dc">documento</i>':'')+'</b><span>Nato il '+fdate(u.d)+'</span><span>'+esc(u.cf||'—')+'</span><span>'+esc(u.t||'—')+'</span><span>'+esc(u.e||'—')+'</span><span>'+esc(u.ci||'—')+'</span></div></div>';
+    '<div class="av">'+esc((u.n[0]||'')+(u.c[0]||'')).toUpperCase()+'</div><div class="cells"><b>'+esc(u.n+' '+u.c)+(hasDoc(u)?' <i class="dc">documento</i>':'')+(u.nr?' <i class="dc warn">non rinnova</i>':'')+'</b><span>Nato il '+fdate(u.d)+'</span><span>'+esc(u.cf||'—')+'</span><span>'+esc(u.t||'—')+'</span><span>'+esc(u.e||'—')+'</span><span>'+esc(u.ci||'—')+'</span></div></div>';
   }).join('');
   document.getElementById('ulist').innerHTML = h;
 }
@@ -1168,17 +1186,44 @@ function alerts(){
   PAC.forEach(function(p){
     var r=restOf(p);if(r>SOGLIA)return;
     var us=(p.uids||[]).map(function(i){return find(i)}).filter(Boolean);if(!us.length)return;
-    var attivi=us.filter(function(u){return !pacOf(u.id).some(function(q){return q!==p&&pk_key(q)>pk_key(p)})});
-    if(attivi.length)out.push({p:p,r:r,us:us});
+    var attivi=us.filter(function(u){return !u.nr&&!pacOf(u.id).some(function(q){return q!==p&&pk_key(q)>pk_key(p)})});
+    if(attivi.length)out.push({p:p,r:r,us:us,at:attivi});
   });
   return out.sort(function(a,b){return a.r-b.r});
 }
 function alertsHtml(){
-  var A=alerts();if(!A.length)return '';
+  var A=alerts().filter(function(a){return a.p.okR!==a.r});if(!A.length)return '';
   return '<div class="alh">Ingressi in esaurimento</div><div class="alerts">'+A.map(function(a){
     var msg=a.r===0?'pacchetto esaurito':'restano '+a.r+(a.r===1?' ingresso':' ingressi');
-    return '<button class="alert'+(a.r===0?' out':'')+'" data-alu="'+esc(a.us[0].id)+'"><i>!</i><span><b>'+esc(a.us.map(uname).join(', '))+'</b><small>'+msg+' · pacchetto da '+a.p.tot+(a.us.length>1?' condiviso':'')+'</small></span><em>›</em></button>';
+    return '<div class="alert'+(a.r===0?' out':'')+'"><button class="alb" data-alu="'+esc(a.at[0].id)+'"><i>!</i><span><b>'+esc(a.at.map(uname).join(', '))+'</b><small>'+msg+' · pacchetto da '+a.p.tot+(a.us.length>1?' condiviso':'')+'</small></span></button><button class="ok" data-act="al_ok" data-id="'+esc(a.p.id)+'">Ok</button></div>';
   }).join('')+'</div>';
+}
+function nAlerts(){return alerts().length}
+function avvStat(){var n=nAlerts();return n?n+(n===1?' avviso':' avvisi'):'Nessun avviso'}
+function bdgHtml(id){if(id!=='avvisi')return '';var n=nAlerts();return '<b class="bdg" data-bdg'+(n?'':' hidden')+'>'+n+'</b>'}
+function updBadge(){var n=nAlerts();[].forEach.call(document.querySelectorAll('[data-bdg]'),function(b){b.textContent=n;b.hidden=!n})}
+async function setNr(id,v){
+  var u=find(id);if(!u)return;u.nr=v;
+  if(dbCol){try{await dbCol.doc(String(u.id)).update({nr:v})}catch(e){}}
+}
+function afterNr(){
+  if(cur==='avvisi')renderAvvisi();
+  else if(cur==='utenti'&&iuid)listIng();
+  updBadge();
+}
+function renderAvvisi(){
+  var A=alerts(),N=U.filter(function(u){return u.nr}).sort(function(a,b){return (a.c+a.n).localeCompare(b.c+b.n)});
+  var h='<h2>Avvisi</h2><p class="sub">Ingressi in esaurimento (3 lezioni o meno) e utenti che non rinnovano.</p>';
+  h+=A.length?A.map(function(a){
+    return '<div class="avc'+(a.r===0?' out':'')+'"><div class="avh"><b>Pacchetto da '+a.p.tot+' · '+(a.r===0?'esaurito':'restano '+a.r+(a.r===1?' ingresso':' ingressi'))+'</b><small>acquistato il '+fdate(a.p.data)+(a.us.length>1?' · condiviso da '+a.us.length+' utenti':'')+'</small></div>'+
+     a.at.map(function(u){return '<div class="avu"><button class="avn" data-alu="'+esc(u.id)+'">'+esc(uname(u))+'</button><button class="pb" data-act="nr_set" data-id="'+esc(u.id)+'" data-v="1">Non rinnova</button></div>'}).join('')+'</div>';
+  }).join(''):'<div class="empty">Nessun avviso: nessun pacchetto in esaurimento.</div>';
+  if(N.length)h+='<h3 class="ih">Non rinnovano</h3>'+N.map(function(u){
+    var np=pacOf(u.id).length;
+    return '<div class="urow" style="align-items:center"><div class="av">'+esc((u.n[0]||'')+(u.c[0]||'')).toUpperCase()+'</div><div class="cells two"><b>'+esc(uname(u))+'</b><span>'+(np?restUser(u.id)+' ingressi rimasti':'Nessun pacchetto')+' · si riattiva con un nuovo pacchetto</span></div><button class="pb" style="flex:none" data-act="nr_set" data-id="'+esc(u.id)+'" data-v="0">Riattiva</button></div>';
+  }).join('');
+  document.getElementById('main').innerHTML=h;
+  updBadge();
 }
 function ingOf(u){return ING.filter(function(x){return String(x.uid)===String(u)}).sort(function(a,b){return (b.day+b.ent).localeCompare(a.day+a.ent)})}
 function findI(id){return ING.filter(function(x){return String(x.id)===String(id)})[0]}
@@ -1199,7 +1244,7 @@ function goSchede(id){closeModal();cur='schede';suid=String(id);sdm=false;ssel={
 function goIng(id){closeModal();iuid=String(id);idm=false;isel={};renderUtenti();window.scrollTo(0,0)}
 function renderIng(){
   var u=find(iuid);if(!u){iuid=null;renderUtenti();return}
-  document.getElementById('main').innerHTML='<button class="back" data-act="ing_back">← Utenti</button><h2>Ingressi</h2><p class="sub">'+esc(uname(u))+'</p>'+
+  document.getElementById('main').innerHTML='<button class="back" data-act="ing_back">← Utenti</button><h2>Ingressi</h2><p class="sub">'+esc(uname(u))+'</p><div id="inr"></div>'+
    '<div class="istats" id="istats"></div>'+
    '<div class="dlh"><h3>Pacchetti</h3><div><button class="pb cam" data-act="pk_add">+ Pacchetto</button></div></div><div id="ipk"></div>'+
    '<div class="dlh"><h3>Registro ingressi</h3><div><button class="pb cam" data-act="ing_add">+ Ingresso</button><button class="pb" id="ibdel" data-act="ing_del">Elimina</button></div></div>'+
@@ -1219,6 +1264,7 @@ function listIng(){
   var L=ingOf(iuid),P=pacOf(iuid),today=iso(new Date()),mese=today.slice(0,7),n=Object.keys(isel).length;
   var rest=restUser(iuid),nm=L.filter(function(x){return x.day.slice(0,7)===mese}).length;
   document.getElementById('istats').innerHTML='<div class="ist'+(P.length?(rest===0?' out':rest<=SOGLIA?' low':''):'')+'"><b>'+(P.length?rest:'—')+'</b><span>'+(P.length?'Rimasti':'Nessun pacchetto')+'</span></div><div class="ist"><b>'+nm+'</b><span>Questo mese</span></div><div class="ist"><b>'+L.length+'</b><span>Totale</span></div>';
+  document.getElementById('inr').innerHTML=u.nr?'<div class="dbar"><span>Non rinnova il pacchetto</span><div><button data-act="nr_set" data-id="'+esc(u.id)+'" data-v="0">Riattiva</button></div></div>':'<div style="margin:0 0 12px"><button class="pb" style="flex:none" data-act="nr_set" data-id="'+esc(u.id)+'" data-v="1">Non rinnova</button></div>';
   document.getElementById('ipk').innerHTML=P.length?P.slice().reverse().map(pkHtml).join(''):'<div class="empty" style="padding:14px 0">Nessun pacchetto. Aggiungine uno con + Pacchetto (10, 20, 30 lezioni o un numero a scelta).</div>';
   document.getElementById('ibdel').classList.toggle('danger',idm);
   document.getElementById('idbar').innerHTML=idm?'<div class="dbar"><span>Seleziona gli ingressi da eliminare ('+n+')</span><div><button data-act="ing_cancel">Annulla</button><button class="danger" data-act="ing_confirm"'+(n?'':' disabled')+'>Elimina</button></div></div>':'';
@@ -1231,9 +1277,11 @@ function listIng(){
   document.getElementById('iprev').innerHTML=Q.length?Q.map(function(it){
     return '<div class="urow" data-ical="'+esc(it.day)+'" style="cursor:pointer;--col:'+CCOL[it.c||0]+'"><span class="cbar"></span><div class="cells two"><b>'+GIORNI3[parseIso(it.day).getDay()]+' '+fdate(it.day)+'</b><span>'+hm(it.s)+'–'+hm(it.e)+' · '+esc(ctitle(it))+'</span></div></div>';
   }).join(''):'<div class="empty" style="padding:14px 0">Nessuna prenotazione in programma.</div>';
+  updBadge();
 }
 function refreshIng(){
-  if(cur==='home')render();
+  updBadge();
+  if(cur==='home'||cur==='avvisi')render();
   else if(cur==='utenti'&&iuid&&document.getElementById('ilist'))listIng();
 }
 // ---- registro ingressi ----
@@ -1314,7 +1362,8 @@ async function savePk(id){
   var o={tot:tot,data:data,note:note,uids:uids},b=document.getElementById('pk_sv');b.disabled=true;b.textContent='Salvataggio…';
   try{
     if(p){Object.keys(o).forEach(function(k){p[k]=o[k]});if(dbPac)await dbPac.doc(String(p.id)).update(o)}
-    else{o.ts=Date.now();if(dbPac)await dbPac.add(o);else{o.id='p'+(++iid)+'_'+o.ts;PAC.push(o)}}
+    else{o.ts=Date.now();if(dbPac)await dbPac.add(o);else{o.id='p'+(++iid)+'_'+o.ts;PAC.push(o)}
+      for(var j=0;j<uids.length;j++){var uu=find(uids[j]);if(uu&&uu.nr)await setNr(uu.id,false)}}
     closeModal();listIng();
   }catch(err){b.disabled=false;b.textContent='Salva';st('pk_st','Salvataggio non riuscito. Riprova.')}
 }
@@ -1361,10 +1410,12 @@ document.addEventListener('click',function(e){
     else if(k==='pk_save')savePk(id||null);
     else if(k==='pk_rm'){var pp=findP(id),nl=pp?usedOf(pp):0;modal('<h3>Elimina pacchetto</h3><p>Vuoi eliminare il pacchetto da '+(pp?pp.tot:'')+' lezioni?'+(nl?' I '+nl+(nl===1?' ingresso':' ingressi')+' già registrati restano nel registro ma non sono più collegati a un pacchetto.':'')+' L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="pk_dorm" data-id="'+esc(id)+'">Elimina</button></div>')}
     else if(k==='pk_dorm')delPac(id);
+    else if(k==='al_ok'){var pa=findP(id);if(pa){pa.okR=restOf(pa);if(dbPac){dbPac.doc(String(pa.id)).update({okR:pa.okR}).catch(function(){})}}render()}
+    else if(k==='nr_set'){setNr(id,a.getAttribute('data-v')==='1').then(afterNr);afterNr()}
     return;
   }
   var al=e.target.closest('[data-alu]');
-  if(al&&cur==='home'){cur='utenti';iuid=String(al.getAttribute('data-alu'));idm=false;isel={};render();window.scrollTo(0,0);return}
+  if(al&&(cur==='home'||cur==='avvisi')){cur='utenti';iuid=String(al.getAttribute('data-alu'));idm=false;isel={};render();window.scrollTo(0,0);return}
   if(cur!=='utenti'||!iuid)return;
   var pk=e.target.closest('[data-pk]');
   if(pk){pkForm(pk.getAttribute('data-pk'));return}
