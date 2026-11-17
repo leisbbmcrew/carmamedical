@@ -188,11 +188,26 @@ var U = [
 ];
 var uq = '', dm = false, sel = {}, draft = {front:null,back:null};
 var dbCol = null, caps = {sample:null,assets:null,down:null};
+var sState = window.claude && window.claude.use ? 'pending' : 'local';
+function sampleMsg(){
+  if(sState==='ok') return 'Carica fronte e/o retro per compilare i campi in automatico.';
+  if(sState==='local') return 'Carica fronte e/o retro per compilare i campi in automatico (la prima lettura scarica il modello di riconoscimento: serve internet).';
+  if(sState==='pending') return 'Verifica della lettura automatica in corso…';
+  if(sState==='none') return 'Lettura automatica non disponibile: compila i campi a mano.';
+  return 'Lettura automatica non disponibile per questo profilo o in questa vista: compila i campi a mano.';
+}
 (async function(){
+  var c = window.claude; if(!c || !c.use) return;
+  c.use('assets').then(function(x){caps.assets=x}).catch(function(){});
+  c.use('downloads').then(function(x){caps.down=x}).catch(function(){});
+  c.use('sample').then(function(x){
+    caps.sample=x; sState=x?'ok':'off';
+    var r=document.getElementById('rstat'), br=document.getElementById('bread');
+    if(r&&!draft.front&&!draft.back) r.textContent=sampleMsg();
+    if(br&&x&&(draft.front||draft.back)) br.disabled=false;
+  }).catch(function(){sState='off'});
   try{
-    var c = window.claude; if(!c || !c.use) return;
     var db = await c.use('db');
-    caps.assets = await c.use('assets'); caps.sample = await c.use('sample'); caps.down = await c.use('downloads');
     if(db){
       dbCol = db.collection('utenti'); U = [];
       dbCol.onSnapshot(function(s){
@@ -244,7 +259,7 @@ function addForm(){
   draft={front:null,back:null};
   modal('<h3>Nuovo utente</h3><div class="idbox"><b>Documento d’identità</b>'+
    '<div class="idrow">'+dropHtml('front','Fronte')+dropHtml('back','Retro')+'</div>'+
-   '<button id="bread" data-act="read" disabled>Leggi dati dal documento</button><div class="status" id="rstat">'+(caps.sample?'Carica fronte e/o retro per compilare i campi in automatico.':'Lettura automatica non disponibile qui: compila i campi a mano.')+'</div></div>'+
+   '<button id="bread" data-act="read" disabled>Leggi dati dal documento</button><div class="status" id="rstat">'+sampleMsg()+'</div></div>'+
    FIELDS.map(function(x){return '<label>'+x[1]+(x[0]==='n'||x[0]==='c'?' *':'')+'<input id="f_'+x[0]+'" type="'+(x[2]||'text')+'"></label>'}).join('')+
    '<div class="status" id="sstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="bsave" data-act="msave">Salva</button></div>');
 }
@@ -256,18 +271,83 @@ async function pickFile(side,file){
   try{
     var b=await shrink(file); draft[side]=b;
     var pv=document.getElementById('pv_'+side); pv.src=URL.createObjectURL(b); pv.style.display='block';
-    var br=document.getElementById('bread'); if(br) br.disabled=!caps.sample;
+    var br=document.getElementById('bread'); if(br) br.disabled=!(caps.sample||sState==='local');
   }catch(e){ st('rstat','Immagine non valida: scegli una foto (JPG o PNG).') }
 }
+// Lettura documento direttamente nel browser (Tesseract.js), senza server e senza API
+var DIG={O:'0',Q:'0',D:'0',I:'1',L:'1',Z:'2',S:'5',B:'8',G:'6'};
+function dfix(s){return s.replace(/[A-Z]/g,function(c){return DIG[c]||c})}
+function ymd(s,kind){
+  if(!/^\d{6}$/.test(s))return '';
+  var y=+s.slice(0,2),m=+s.slice(2,4),d=+s.slice(4,6); if(m<1||m>12||d<1||d>31)return '';
+  var cy=new Date().getFullYear()%100, Y=kind==='b'?(y>cy?1900:2000)+y:2000+y;
+  return Y+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2);
+}
+function tcase(s){return s.toLowerCase().replace(/(^|[\s'’-])([a-zà-ÿ])/g,function(_,a,b){return a+b.toUpperCase()})}
+function parseMRZ(t){
+  var L=String(t).toUpperCase().split(/\n/).map(function(x){return x.replace(/[^A-Z0-9<]/g,'')}).filter(function(x){return x.length>=24});
+  var l1,l2,l3;
+  L.forEach(function(x){
+    x=(x+'<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<').slice(0,30);
+    var is2=/^\d{6}\d[MF<]\d{6}\d/.test(dfix(x.slice(0,7))+x.charAt(7)+dfix(x.slice(8,15)));
+    var is3=x.indexOf('<<')>0&&/^[A-Z<]+$/.test(x);
+    if(is2){if(!l2)l2=x}else if(is3){if(!l3)l3=x}else if(/^[ICA][A-Z<]/.test(x)&&/\d/.test(x.slice(5,14))){if(!l1)l1=x}
+  });
+  var o={};
+  if(l2){o.data_nascita=ymd(dfix(l2.slice(0,6)),'b');o.scadenza=ymd(dfix(l2.slice(8,14)),'e')}
+  if(l3){var p=l3.split('<<');o.cognome=tcase(p[0].replace(/[<0-9]/g,' ').trim());o.nome=tcase((p[1]||'').replace(/[<0-9]/g,' ').trim())}
+  if(l1){o.numero_documento=l1.slice(5,14).replace(/</g,'')}
+  return o;
+}
+function toIso(g){var m=String(g).match(/(\d{2})[\/\.\-\s](\d{2})[\/\.\-\s](\d{4})/);return m?m[3]+'-'+m[2]+'-'+m[1]:''}
+function parseFront(t){
+  var lines=String(t).split(/\n/).map(function(x){return x.trim()}).filter(Boolean),o={};
+  function nxt(i){return lines[i+1]||''}
+  function letters(s){return s.replace(/[^A-Za-zÀ-ÿ' ]/g,' ').replace(/\s+/g,' ').trim()}
+  function find(re){for(var i=0;i<lines.length;i++)if(re.test(lines[i]))return i;return -1}
+  var i=find(/^\W*cognome/i); if(i>-1){var v=letters(nxt(i)); if(v)o.cognome=tcase(v)}
+  i=find(/^\W*nome\b/i); if(i>-1){var v2=letters(nxt(i)); if(v2)o.nome=tcase(v2)}
+  i=find(/nascita|birth/i); if(i>-1)o.data_nascita=toIso(lines.slice(i,i+3).join(' '));
+  i=find(/scadenza|expiry/i); if(i>-1)o.scadenza=toIso(lines.slice(i,i+3).join(' '));
+  i=find(/residenza|residence/i); if(i>-1){var c=letters(nxt(i).split(/[(,]/)[0]); if(c.length>2)o.residenza=tcase(c)}
+  var up=String(t).toUpperCase();
+  var cf=up.replace(/[^A-Z0-9\n]/g,'').match(/[A-Z]{6}\d{2}[A-EHLMPRST]\d{2}[A-Z]\d{3}[A-Z]/); if(cf)o.codice_fiscale=cf[0];
+  var dn=up.match(/\b[A-Z]{2}\s?\d{5}\s?[A-Z]{2}\b/); if(dn)o.numero_documento=dn[0].replace(/\s/g,'');
+  return o;
+}
+var TESS_BASE=new URL('vendor/tesseract/',document.baseURI).href, TESS_LOCAL=false;
+function addScript(src){return new Promise(function(ok,ko){var sc=document.createElement('script');sc.src=src;sc.onload=ok;sc.onerror=function(){sc.remove();ko(new Error('net'))};document.head.appendChild(sc)})}
+function loadTess(){
+  if(window.Tesseract)return Promise.resolve(window.Tesseract);
+  // prima i file nel repository (vendor/tesseract/), altrimenti da internet
+  return addScript(TESS_BASE+'tesseract.min.js').then(function(){TESS_LOCAL=true;return window.Tesseract})
+   .catch(function(){return addScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js').then(function(){return window.Tesseract})});
+}
+async function ocr(blob,lang,whitelist,onp){
+  var T=await loadTess();
+  var opts={logger:function(m){if(m.status==='recognizing text'&&onp)onp(m.progress)}};
+  if(TESS_LOCAL){opts.workerPath=TESS_BASE+'worker.min.js';opts.corePath=TESS_BASE;opts.langPath=TESS_BASE+'lang'}
+  var w=await T.createWorker(lang,1,opts);
+  try{ if(whitelist)await w.setParameters({tessedit_char_whitelist:whitelist}); var r=await w.recognize(blob); return r.data.text||'' }
+  finally{ await w.terminate() }
+}
+async function localRead(){
+  var prog=function(p){st('rstat','Lettura in corso… '+Math.round(p*100)+'%')}, texts=[];
+  for(var s of ['front','back']){ if(draft[s]) texts.push(await ocr(draft[s],'ita',null,prog)) }
+  var mrz=parseMRZ(await ocr(draft.back||draft.front,'eng','ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<',prog));
+  var fr=parseFront(texts.join('\n')), out={};
+  [fr,mrz].forEach(function(src){Object.keys(src).forEach(function(k){if(src[k])out[k]=src[k]})});
+  return out;
+}
 async function readDoc(){
-  var imgs=[draft.front,draft.back].filter(Boolean); if(!imgs.length||!caps.sample) return;
+  var imgs=[draft.front,draft.back].filter(Boolean); if(!imgs.length||!(caps.sample||sState==='local')) return;
   var b=document.getElementById('bread'); b.disabled=true; st('rstat','Lettura in corso…');
   try{
-    var r=await caps.sample.json('Le immagini allegate sono il fronte e/o il retro di un documento d’identità (in quest’ordine: fronte, poi retro se presente). Estrai i dati e rispondi solo con un oggetto JSON con queste chiavi: nome, cognome, data_nascita (formato AAAA-MM-GG), codice_fiscale, residenza (solo città), numero_documento, scadenza (formato AAAA-MM-GG). Usa una stringa vuota per ciò che non è leggibile e non inventare nulla.',{images:imgs});
+    var r=caps.sample ? await caps.sample.json('Le immagini allegate sono il fronte e/o il retro di un documento d’identità (in quest’ordine: fronte, poi retro se presente). Estrai i dati e rispondi solo con un oggetto JSON con queste chiavi: nome, cognome, data_nascita (formato AAAA-MM-GG), codice_fiscale, residenza (solo città), numero_documento, scadenza (formato AAAA-MM-GG). Usa una stringa vuota per ciò che non è leggibile e non inventare nulla.',{images:imgs}) : await localRead();
     var m={n:r.nome,c:r.cognome,d:r.data_nascita,cf:r.codice_fiscale,ci:r.residenza,dn:r.numero_documento,ds:r.scadenza};
-    Object.keys(m).forEach(function(k){var el=document.getElementById('f_'+k);if(el&&m[k])el.value=String(m[k]).trim()});
-    st('rstat','Dati compilati: controllali prima di salvare.');
-  }catch(e){ st('rstat','Lettura non riuscita: compila i campi a mano.') }
+    var fl=0;Object.keys(m).forEach(function(k){var el=document.getElementById('f_'+k);if(el&&m[k]){el.value=String(m[k]).trim();fl++}});
+    st('rstat',fl?'Dati compilati ('+fl+' campi): controllali prima di salvare.':'Non sono riuscito a leggere il documento: prova con una foto più nitida o compila a mano.');
+  }catch(e){ st('rstat',e&&e.message==='net'?'Impossibile scaricare il modello di lettura: serve una connessione internet.':'Lettura non riuscita: compila i campi a mano.') }
   b.disabled=false;
 }
 async function saveUser(){

@@ -43,6 +43,8 @@ Per pubblicarlo online: su GitHub, **Settings → Pages**, scegliere il branch `
 ```
 ├── index.html   # home dell'app (HTML, CSS e JavaScript in un unico file)
 ├── README.md    # questo riepilogo
+├── scarica-ocr-offline.js   # prepara i file per la lettura senza internet
+├── vendor/tesseract/        # (creata dallo script) motore e lingue di lettura
 └── .gitignore
 ```
 
@@ -57,5 +59,16 @@ Per pubblicarlo online: su GitHub, **Settings → Pages**, scegliere il branch `
 Alla creazione di un utente si può scattare la foto o scegliere un file per fronte e retro del documento. Il sistema legge i dati e compila i campi (da controllare prima di salvare); le foto restano salvate e si scaricano dalla scheda dell'utente (tocco sulla riga).
 
 - Nella versione pubblicata su claude.ai la lettura dei dati, il salvataggio e il database funzionano grazie al runtime della pagina.
-- Aprendo `index.html` fuori da claude.ai (per esempio su GitHub Pages) la lettura automatica non è disponibile e i dati restano solo in memoria fino al ricaricamento: per un uso reale servono un server con database, archivio file protetto e un servizio di lettura documenti (con la chiave API sul server, mai nella pagina).
+- Aprendo `index.html` fuori da claude.ai (per esempio su GitHub Pages) la lettura avviene direttamente nel browser, senza server né API (vedi sotto). Gli utenti e i documenti restano però solo in memoria fino al ricaricamento: per salvarli servono un database e un archivio file protetto.
 - I documenti d'identità sono dati personali: servono informativa, consenso, accesso limitato al personale autorizzato e conservazione sicura (GDPR).
+
+## Lettura automatica nel browser (senza API)
+
+Fuori da claude.ai la pagina legge il documento con Tesseract.js, un programma di riconoscimento del testo che gira nel browser. Le foto non lasciano il dispositivo.
+
+- Al primo uso scarica da internet (jsDelivr) il motore e i dati di lingua, qualche MB; poi il browser li tiene in cache. Serve quindi una connessione, ma nessuna chiave e nessun server.
+- Sul retro della carta d'identità elettronica legge la riga di caratteri in basso (MRZ), molto affidabile per cognome, nome, data di nascita, scadenza e numero documento. Dal testo stampato ricava anche il codice fiscale e la città di residenza, quando sono leggibili.
+- La precisione dipende dalla foto: documento intero, a fuoco, ben illuminato e senza riflessi. I campi vanno sempre controllati prima di salvare.
+- I documenti cartacei o le patenti hanno un'impaginazione diversa e vengono letti con meno precisione.
+- Per usarla senza internet: installa Node.js, metti `scarica-ocr-offline.js` nella cartella del repository ed esegui `node scarica-ocr-offline.js`. Crea la cartella `vendor/tesseract/` con motore e lingue italiano e inglese. Carica su GitHub la cartella `vendor/` insieme a `index.html`: la pagina usa quei file e, se mancano, ripiega su internet.
+- La pagina va aperta da un indirizzo web (GitHub Pages o un server locale), non con doppio clic sul file: i browser bloccano il motore di lettura sui file aperti da disco.
