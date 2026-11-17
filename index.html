@@ -378,13 +378,13 @@ function sampleMsg(){
       dbCal = db.collection('calendario'); CAL = [];
       dbIng = db.collection('ingressi'); ING = [];
       dbPac = db.collection('pacchetti'); PAC = [];
-      dbPac.onSnapshot(function(q){PAC=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});refreshIng()},function(){});
-      dbIng.onSnapshot(function(q){ING=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});refreshIng()},function(){});
-      dbCal.onSnapshot(function(q){CAL=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});refreshCal()},function(){});
+      dbPac.onSnapshot(function(q){PAC=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});rdy.pac=1;refreshIng();autoIng()},function(){});
+      dbIng.onSnapshot(function(q){ING=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});rdy.ing=1;refreshIng();autoIng()},function(){});
+      dbCal.onSnapshot(function(q){CAL=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});rdy.cal=1;refreshCal();autoIng()},function(){});
       dbCol.onSnapshot(function(s){
-        U = s.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});
+        U = s.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});rdy.u=1;
         if(cur==='utenti' && document.getElementById('ulist')) listUtenti();
-        refreshSchede();refreshCal();refreshIng();
+        refreshSchede();refreshCal();refreshIng();autoIng();
       }, function(){});
     }
   }catch(e){}
@@ -863,6 +863,7 @@ function seedCal(){
   a(2,'lezione','Spinning','19:00','20:00',3,['1','2','3']);
   a(3,'lezione','Yoga','09:00','10:00',0,['2']);
   a(4,'accesso','Accesso libero','08:00','10:00',0,['2','3']);
+  var nw=Date.now();r.forEach(function(it){if(parseIso(it.day).getTime()+it.s*60000<=nw)it.sc=it.u.slice()});
   return r;
 }
 var CAL=seedCal();
@@ -1051,7 +1052,7 @@ async function saveCalForm(){
     if(fid){await saveC(findC(fid),o)}
     else if(dbCal){await dbCal.add(o)}
     else{o.id='c'+(++cuid);CAL.push(o)}
-    calD=parseIso(day);closeModal();drawCal();
+    calD=parseIso(day);closeModal();drawCal();autoIng();
   }catch(err){b.disabled=false;b.textContent='Salva';st('c_st','Salvataggio non riuscito. Riprova.')}
 }
 async function delCal(id){
@@ -1095,7 +1096,7 @@ function endDrag(e,ok){
   if(!d.active)return;
   d.el.classList.remove('drag');
   var changed=d.s!==d.s0||d.e!==d.e0||d.day!==d.day0;
-  if(ok&&changed){calNoClick=Date.now();saveC(d.it,{day:d.day,s:d.s,e:d.e})}
+  if(ok&&changed){calNoClick=Date.now();saveC(d.it,{day:d.day,s:d.s,e:d.e});autoIng()}
   drawCal();
 }
 document.addEventListener('pointerdown',function(e){
@@ -1424,8 +1425,43 @@ document.addEventListener('click',function(e){
   var c=e.target.closest('[data-ical]');
   if(c){calD=parseIso(c.getAttribute('data-ical'));calV='day';iuid=null;cur='calendario';render();window.scrollTo(0,0)}
 });
+
+// ---- Scalare le lezioni: quando arriva l'orario di una voce del calendario, per ogni utente assegnato si registra
+// in automatico un ingresso che scala una lezione dal pacchetto (il più vecchio con lezioni rimaste).
+// La voce ricorda gli utenti già conteggiati (sc), così non si scala due volte.
+var rdy={}, autoBusy=false;
+async function addAutoIng(it,uid){
+  var id='auto_'+it.id+'_'+uid;
+  if(findI(id))return;
+  var o={uid:String(uid),day:it.day,ent:hm(it.s),usc:hm(it.e),note:ctitle(it),pid:autoPid(uid),cid:String(it.id),auto:true};
+  if(dbIng){try{await dbIng.doc(id).set(o)}catch(e){}}
+  o.id=id;if(!findI(id))ING.push(o);
+}
+async function autoIng(){
+  if(autoBusy)return;
+  if(dbCal&&!(rdy.cal&&rdy.ing&&rdy.pac&&rdy.u))return;
+  autoBusy=true;
+  try{
+    var n=new Date(),key=iso(n)+' '+hm(n.getHours()*60+n.getMinutes()),changed=false;
+    var L=CAL.filter(function(it){return (it.day+' '+hm(it.s))<=key}).sort(function(a,b){return (a.day+hm(a.s)).localeCompare(b.day+hm(b.s))});
+    for(var i=0;i<L.length;i++){
+      var it=L[i],done=(it.sc||[]).map(String),todo=(it.u||[]).map(String).filter(function(u){return done.indexOf(u)<0&&find(u)});
+      if(!todo.length)continue;
+      for(var j=0;j<todo.length;j++)await addAutoIng(it,todo[j]);
+      await saveC(it,{sc:done.concat(todo)});changed=true;
+    }
+    if(changed){
+      updBadge();
+      if(cur==='home'||cur==='avvisi')render();
+      else if(cur==='utenti'&&iuid&&document.getElementById('ilist'))listIng();
+    }
+  }finally{autoBusy=false}
+}
+setInterval(autoIng,30000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)autoIng()});
 setView(window.innerWidth>=768?'tablet':'mobile');
 render();
+autoIng();
 </script>
 </body>
 </html>
