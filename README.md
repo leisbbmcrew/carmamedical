@@ -72,3 +72,5 @@ Fuori da claude.ai la pagina legge il documento con Tesseract.js, un programma d
 - I documenti cartacei o le patenti hanno un'impaginazione diversa e vengono letti con meno precisione.
 - Per usarla senza internet: installa Node.js, metti `scarica-ocr-offline.js` nella cartella del repository ed esegui `node scarica-ocr-offline.js`. Crea la cartella `vendor/tesseract/` con motore e lingue italiano e inglese. Carica su GitHub la cartella `vendor/` insieme a `index.html`: la pagina usa quei file e, se mancano, ripiega su internet.
 - La pagina va aperta da un indirizzo web (GitHub Pages o un server locale), non con doppio clic sul file: i browser bloccano il motore di lettura sui file aperti da disco.
+
+Se un dato viene letto male, sotto le foto c'è **Mostra testo letto** con quello che il programma ha riconosciuto: serve per capire dove sbaglia. Per cognome, nome, date, numero documento e codice fiscale la lettura si controlla da sola con i caratteri di controllo (riga in basso del documento e ultima lettera del codice fiscale): i valori che non tornano vengono scartati o segnalati.
