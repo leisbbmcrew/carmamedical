@@ -257,6 +257,20 @@ h2{font-size:22px;margin:0 0 4px}
 .avu{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
 .avn{background:none;border:none;color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer;padding:6px 0;min-width:0}
 .avu .pb{flex:none;padding:8px 12px}
+/* documenti in anagrafica */
+.fdocs{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
+.fdoc{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.fic{display:flex;align-items:center;gap:2px;flex-shrink:0;min-width:44px;height:40px;padding:0 8px;border-radius:10px;background:var(--brand-soft);color:var(--brand);justify-content:center}
+.fic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.fic b{font-size:15px}
+.fnm{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}.fnm b{font-size:14px}.fnm small{font-size:12px;color:var(--muted)}
+.fnm small.ok{color:var(--brand)}
+.fbt{display:flex;gap:6px;flex-shrink:0}
+.ib,.mbox label.ib{display:grid;place-items:center;width:38px;height:38px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);cursor:pointer;flex-direction:row;gap:0}
+.ib svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ib.up{background:var(--brand);border-color:var(--brand);color:#fff}
+.dview{width:100%;max-height:62vh;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+iframe.dview{height:62vh}
 /* login: attivare a programma finito */
 #login{display:none;position:absolute;inset:0;z-index:5;background:var(--bg);align-items:center;justify-content:center;padding:24px}
 #login.on{display:flex}
@@ -601,15 +615,6 @@ async function saveUser(){
   }catch(e){b.disabled=false;b.textContent='Salva';st('sstat','Salvataggio non riuscito. Riprova.')}
 }
 function find(id){return U.filter(function(u){return String(u.id)===String(id)})[0]}
-function openUser(id){
-  var u=find(id); if(!u)return;
-  var rows=[['Nome',u.n+' '+u.c],['Data di nascita',fdate(u.d)],['Codice fiscale',u.cf],['Telefono',u.t],['Email',u.e],['Città',u.ci],['N. documento',u.dn],['Scadenza documento',fdate(u.ds)]];
-  var btn=function(s,l){return (u[s+'Id']||u[s+'Blob'])?'<button data-act="dl" data-id="'+esc(u.id)+'" data-side="'+s+'">Scarica '+l+'</button>':''};
-  var docs=btn('front','fronte')+btn('back','retro');
-  modal('<h3>'+esc(u.n+' '+u.c)+'</h3><dl class="det">'+rows.map(function(r){return '<dt>'+r[0]+'</dt><dd>'+esc(r[1]||'—')+'</dd>'}).join('')+'</dl>'+
-   '<div class="idbox"><b>Documento d’identità</b>'+(docs?'<div class="idrow">'+docs+'</div>':'<div class="status">Nessun documento salvato.</div>')+'<div class="status" id="dstat"></div></div>'+
-   '<div class="mrow"><button data-act="mclose">Chiudi</button></div>');
-}
 async function dl(id,side){
   var u=find(id); if(!u)return;
   try{
@@ -628,7 +633,7 @@ async function doDelete(){
     await dropUserFromCal(u.id);
     await dropIngOf(u.id);
     await dropUserFromPac(u.id);
-    if(caps.assets){for(var s of ['frontId','backId']){if(u[s]){try{await caps.assets.delete(u[s])}catch(e){}}}}
+    if(caps.assets){for(var s of ['frontId','backId','certId']){if(u[s]){try{await caps.assets.delete(u[s])}catch(e){}}}}
   }
   if(!dbCol)U=U.filter(function(u){return !sel[u.id]});
   sel={};dm=false;closeModal();listUtenti();
@@ -1236,7 +1241,7 @@ function openUserMenu(id){
   var u=find(id);if(!u)return;
   var s=schedeOf(id).length,n=ingOf(id).length,np=pacOf(id).length,i=esc(u.id);
   modal('<h3>'+esc(uname(u))+'</h3><div class="umenu">'+
-   '<button data-act="um_ana" data-id="'+i+'"><span>Anagrafica<small>Dati personali e documento</small></span><i>›</i></button>'+
+   '<button data-act="um_ana" data-id="'+i+'"><span>Anagrafica<small>Dati personali, documenti e certificato medico</small></span><i>›</i></button>'+
    '<button data-act="um_sch" data-id="'+i+'"><span>Scheda allenamento<small>'+(s?s+(s===1?' scheda':' schede'):'Nessuna scheda')+'</small></span><i>›</i></button>'+
    '<button data-act="um_ing" data-id="'+i+'"><span>Ingressi<small>'+(np?restUser(id)+' ingressi rimasti':n?n+' ingressi registrati':'Nessun pacchetto')+'</small></span><i>›</i></button></div>'+
    '<div class="mrow"><button data-act="mclose">Chiudi</button></div>');
@@ -1424,6 +1429,87 @@ document.addEventListener('click',function(e){
   if(r){var i2=r.getAttribute('data-irow');if(idm){if(isel[i2])delete isel[i2];else isel[i2]=1;listIng()}else ingForm(i2);return}
   var c=e.target.closest('[data-ical]');
   if(c){calD=parseIso(c.getAttribute('data-ical'));calV='day';iuid=null;cur='calendario';render();window.scrollTo(0,0)}
+});
+
+// ---- Documenti dell'utente in Anagrafica: documento fronte/retro e certificato medico (carica, apri, scarica) ----
+var DK=[['front','F','Documento · fronte','fronte'],['back','R','Documento · retro','retro'],['cert','','Certificato medico','certificato_medico']];
+var EXT={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','application/pdf':'pdf'};
+var IC={
+  clip:'<svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+  eye:'<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  down:'<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>',
+  up:'<svg viewBox="0 0 24 24"><path d="M12 15V3m0 0L8 7m4-4l4 4M4 20h16"/></svg>'
+};
+function dkOf(k){return DK.filter(function(x){return x[0]===k})[0]}
+function hasDk(u,k){return !!(u[k+'Id']||u[k+'Blob'])}
+function typeLabel(u,k){var t=u[k+'Blob']?u[k+'Blob'].type:u[k+'Type'];return t==='application/pdf'?'PDF':'immagine'}
+function openUser(id){
+  var u=find(id);if(!u)return;
+  var rows=[['Nome',u.n+' '+u.c],['Data di nascita',fdate(u.d)],['Codice fiscale',u.cf],['Telefono',u.t],['Email',u.e],['Città',u.ci],['N. documento',u.dn],['Scadenza documento',fdate(u.ds)]];
+  var i=esc(u.id);
+  modal('<h3>'+esc(u.n+' '+u.c)+'</h3><dl class="det">'+rows.map(function(r){return '<dt>'+r[0]+'</dt><dd>'+esc(r[1]||'—')+'</dd>'}).join('')+'</dl>'+
+   '<div class="fdocs"><b>Documenti</b>'+DK.map(function(d){
+     var has=hasDk(u,d[0]);
+     return '<div class="fdoc"><span class="fic">'+IC.clip+(d[1]?'<b>'+d[1]+'</b>':'')+'</span><div class="fnm"><b>'+d[2]+'</b><small'+(has?' class="ok"':'')+'>'+(has?'Caricato · '+typeLabel(u,d[0]):'Non caricato')+'</small></div><div class="fbt">'+
+      (has?'<button class="ib" data-act="doc_open" data-id="'+i+'" data-k="'+d[0]+'" aria-label="Apri '+d[2]+'" title="Apri">'+IC.eye+'</button><button class="ib" data-act="doc_dl" data-id="'+i+'" data-k="'+d[0]+'" aria-label="Scarica '+d[2]+'" title="Scarica">'+IC.down+'</button>':'')+
+      '<label class="ib up" title="'+(has?'Sostituisci':'Carica')+'" aria-label="'+(has?'Sostituisci ':'Carica ')+d[2]+'">'+IC.up+'<input type="file" accept="image/*,application/pdf" data-up="'+d[0]+'" data-uid="'+i+'" hidden></label></div></div>';
+   }).join('')+'<div class="status" id="dstat">Puoi caricare una foto o un PDF.</div></div>'+
+   '<div class="mrow"><button data-act="mclose">Chiudi</button></div>');
+}
+async function docBlob(u,k){
+  var b=u[k+'Blob'];
+  if(!b){var id=u[k+'Id'];if(!id)return null;var r=await fetch('/_blob/'+id);b=await r.blob()}
+  if(!b.type)b=new Blob([b],{type:u[k+'Type']||'image/jpeg'});
+  return b;
+}
+function docName(u,k,b){return (u.c+'_'+u.n+'_'+dkOf(k)[3]+'.'+(EXT[b.type]||'jpg')).replace(/\s+/g,'_')}
+async function uploadDoc(uid,k,file){
+  var u=find(uid);if(!u)return;
+  st('dstat','Caricamento in corso…');
+  try{
+    var blob=file;
+    if(/^image\//.test(file.type))blob=await shrink(file);
+    else if(file.type!=='application/pdf'){st('dstat','Formato non supportato: scegli una foto o un PDF.');return}
+    if(blob.size>15*1024*1024){st('dstat','File troppo grande (massimo 15 MB).');return}
+    var patch={},old=u[k+'Id'];
+    if(caps.assets){var a=await caps.assets.upload(blob);patch[k+'Id']=a.id;patch[k+'Type']=blob.type;patch[k+'Blob']=null}
+    else if(dbCol){st('dstat','Archivio documenti non disponibile per questo profilo.');return}
+    else{patch[k+'Blob']=blob;patch[k+'Id']=null}
+    Object.keys(patch).forEach(function(x){u[x]=patch[x]});
+    if(dbCol){var dp={};dp[k+'Id']=patch[k+'Id'];dp[k+'Type']=blob.type;await dbCol.doc(String(u.id)).update(dp)}
+    if(old&&caps.assets&&old!==patch[k+'Id']){try{await caps.assets.delete(old)}catch(e){}}
+    openUser(uid);st('dstat','Caricato: '+dkOf(k)[2]+'.');
+    if(cur==='utenti'&&document.getElementById('ulist'))listUtenti();
+  }catch(e){st('dstat','Caricamento non riuscito. Riprova.')}
+}
+async function docOpen(uid,k){
+  var u=find(uid);if(!u)return;
+  st('dstat','Apertura in corso…');
+  try{
+    var b=await docBlob(u,k),url=URL.createObjectURL(b),pdf=b.type==='application/pdf',d=dkOf(k);
+    modal('<h3>'+esc(d[2])+'</h3><div class="status">'+esc(u.n+' '+u.c)+'</div>'+
+     (pdf?'<iframe class="dview" src="'+url+'" title="'+esc(d[2])+'"></iframe>':'<img class="dview" src="'+url+'" alt="'+esc(d[2])+'">')+
+     '<div class="status">Se non vedi l’anteprima usa Scarica o <a href="'+url+'" target="_blank" rel="noopener">apri in una nuova scheda</a>.</div>'+
+     '<div class="mrow"><button data-act="doc_back" data-id="'+esc(u.id)+'">Indietro</button><button class="pri" data-act="doc_dl" data-id="'+esc(u.id)+'" data-k="'+k+'">Scarica</button></div>');
+    document.querySelector('#modal .mbox').classList.add('wide');
+  }catch(e){st('dstat','Impossibile aprire il file. Riprova.')}
+}
+async function docDl(uid,k){
+  var u=find(uid);if(!u)return;
+  try{
+    var b=await docBlob(u,k);await saveBlob(b,docName(u,k,b));
+  }catch(e){st('dstat','Download non riuscito. Riprova.')}
+}
+document.addEventListener('change',function(e){
+  var t=e.target,k=t.getAttribute&&t.getAttribute('data-up');
+  if(k&&t.files&&t.files[0]){var f=t.files[0],uid=t.getAttribute('data-uid');t.value='';uploadDoc(uid,k,f)}
+});
+document.addEventListener('click',function(e){
+  var a=e.target.closest('[data-act]');if(!a)return;
+  var k=a.getAttribute('data-act'),id=a.getAttribute('data-id'),dk=a.getAttribute('data-k');
+  if(k==='doc_open')docOpen(id,dk);
+  else if(k==='doc_dl')docDl(id,dk);
+  else if(k==='doc_back')openUser(id);
 });
 
 // ---- Scalare le lezioni: quando arriva l'orario di una voce del calendario, per ogni utente assegnato si registra

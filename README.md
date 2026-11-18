@@ -115,7 +115,7 @@ Se si elimina un utente, viene tolto anche da tutte le voci del calendario. Come
 
 Toccando un utente nell'elenco (scheda Utenti) si apre un menu con tre voci:
 
-- **Anagrafica:** i dati personali e il documento d'identità salvato.
+- **Anagrafica:** i dati personali e tre allegati, ciascuno con la sua riga: **F** (documento fronte), **R** (documento retro) e **certificato medico**, tutti con l'icona della graffetta. Per ognuno ci sono tre tasti: **occhio** per aprirlo (anteprima nella finestra, con *Scarica* e *Indietro*), **freccia in giù** per scaricarlo, **freccia in su** per caricarlo o sostituirlo. Si carica una foto (si può scattare dal telefono) o un PDF, fino a 15 MB; le foto vengono ridotte automaticamente. I file scaricati si chiamano per esempio `Rossi_Marco_fronte.jpg` o `Rossi_Marco_certificato_medico.pdf`. Cancellando l'utente si cancellano anche gli allegati.
 - **Scheda allenamento:** apre direttamente le schede di quell'utente.
 - **Ingressi:** pacchetti di lezioni e registro degli ingressi dell'utente.
 
