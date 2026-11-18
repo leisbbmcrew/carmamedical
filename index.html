@@ -271,6 +271,18 @@ h2{font-size:22px;margin:0 0 4px}
 .ib.up{background:var(--brand);border-color:var(--brand);color:#fff}
 .dview{width:100%;max-height:62vh;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 iframe.dview{height:62vh}
+/* eventi */
+.evd{flex-shrink:0;width:52px;border-radius:12px;background:var(--brand-soft);color:var(--brand);text-align:center;padding:6px 0;line-height:1.15}
+.evd b{display:block;font-size:20px}.evd span{font-size:12px;text-transform:uppercase}
+.evd.past{background:var(--line);color:var(--muted)}
+.evc{display:inline-flex;align-items:center;gap:3px;color:var(--muted);white-space:nowrap}
+.evc svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mbox textarea{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;min-height:96px;resize:vertical}
+.evdesc{white-space:pre-wrap;margin:6px 0 14px;font-size:15px;line-height:1.5}
+.mbox label.addf{flex-direction:row;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border:1px dashed var(--brand);border-radius:12px;color:var(--brand);font-weight:600;font-size:14px;cursor:pointer}
+.addf svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.fdoc .fic{min-width:40px;padding:0}
+.fdoc .fnm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 /* login: attivare a programma finito */
 #login{display:none;position:absolute;inset:0;z-index:5;background:var(--bg);align-items:center;justify-content:center;padding:24px}
 #login.on{display:flex}
@@ -333,7 +345,7 @@ function render(){
   var m = document.getElementById('main'), h = '';
   if (cur === 'home') {
     h = '<h2>Benvenuto</h2><p class="sub">Scegli una sezione per iniziare.</p>'+alertsHtml()+'<div class="grid">' +
-      S.map(function(x){return '<button class="card" style="--col:'+x.c+'" data-go="'+x.id+'"><div class="ic">'+x.i+'</div><h3>'+x.t+'</h3><p>'+x.d+'</p><span class="stat">'+(x.id==='avvisi'?avvStat():x.s)+' →</span></button>'}).join('') + '</div>';
+      S.map(function(x){return '<button class="card" style="--col:'+x.c+'" data-go="'+x.id+'"><div class="ic">'+x.i+'</div><h3>'+x.t+'</h3><p>'+x.d+'</p><span class="stat">'+(x.id==='avvisi'?avvStat():x.id==='eventi'?evStat():x.s)+' →</span></button>'}).join('') + '</div>';
   } else {
     var x = S.filter(function(y){return y.id===cur})[0];
     h = '<button class="back" data-go="home">← Home</button><h2>'+x.t+'</h2><p class="sub">'+x.d+'</p><div class="panel">Sezione in sviluppo.</div>';
@@ -342,6 +354,7 @@ function render(){
   if (cur === 'utenti') renderUtenti();
   if (cur === 'schede') renderSchede();
   if (cur === 'avvisi') renderAvvisi();
+  if (cur === 'eventi') renderEventi();
   if (cur === 'calendario') renderCal();
   var items = [{id:'home',t:'Home',i:I.home}].concat(S.map(function(x){return {id:x.id,t:x.id==='schede'?'Schede':x.t,i:x.i}}));
   document.getElementById('tabbar').innerHTML = items.map(function(x){return '<button class="tab" data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+x.t+'</span>'+bdgHtml(x.id)+'</button>'}).join('');
@@ -392,6 +405,8 @@ function sampleMsg(){
       dbCal = db.collection('calendario'); CAL = [];
       dbIng = db.collection('ingressi'); ING = [];
       dbPac = db.collection('pacchetti'); PAC = [];
+      dbEvt = db.collection('eventi'); EVT = [];
+      dbEvt.onSnapshot(function(q){EVT=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});refreshEv()},function(){});
       dbPac.onSnapshot(function(q){PAC=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});rdy.pac=1;refreshIng();autoIng()},function(){});
       dbIng.onSnapshot(function(q){ING=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});rdy.ing=1;refreshIng();autoIng()},function(){});
       dbCal.onSnapshot(function(q){CAL=q.docs.map(function(d){var o=d.data()||{};o.id=d.id;return o});rdy.cal=1;refreshCal();autoIng()},function(){});
@@ -1510,6 +1525,185 @@ document.addEventListener('click',function(e){
   if(k==='doc_open')docOpen(id,dk);
   else if(k==='doc_dl')docDl(id,dk);
   else if(k==='doc_back')openUser(id);
+});
+
+// ---- Eventi: creazione e gestione, con file allegati ----
+// Evento: {id, t:titolo, day, ent:inizio, usc:fine, luogo, desc, files:[{id|blob, name, type, size}]}
+var EVT=[], dbEvt=null, eid=0, evm=false, esel={}, evq='', evid=null, evF=[], evRm=[];
+var EVMAX=15*1024*1024, EVFILES=10;
+(function(){
+  var t=new Date();
+  EVT.push({id:'e1',t:'Open day autunnale',day:iso(addDays(t,9)),ent:'10:00',usc:'13:00',luogo:'Palestra, sala principale',desc:'Giornata aperta con prove gratuite dei corsi e consulenza con gli istruttori.',files:[]});
+  EVT.push({id:'e2',t:'Workshop alimentazione',day:iso(addDays(t,-14)),ent:'18:30',usc:'20:00',luogo:'Sala conferenze',desc:'',files:[]});
+})();
+var MIME={pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif'};
+function guessType(name,type){if(type)return type;var m=/\.([a-z0-9]+)$/i.exec(name||'');return (m&&MIME[m[1].toLowerCase()])||'application/octet-stream'}
+function fsize(n){return n<1024?n+' B':n<1048576?Math.round(n/1024)+' KB':(n/1048576).toFixed(1).replace('.',',')+' MB'}
+function findE(id){return EVT.filter(function(x){return String(x.id)===String(id)})[0]}
+function timeTxt(e){return e.ent?e.ent+(e.usc?'–'+e.usc:''):'Giornata intera'}
+function evStat(){var n=EVT.filter(function(e){return e.day>=iso(new Date())}).length;return n?n+' in programma':'Nessun evento in programma'}
+function renderEventi(){
+  document.getElementById('main').innerHTML='<div class="uh"><div><h2>Eventi</h2><p class="sub" id="evcount"></p></div><div class="uact">'+
+   '<button class="ab pri" data-act="ev_add" aria-label="Nuovo evento"><span class="i">+</span><span class="t">Crea</span></button>'+
+   '<button class="ab" id="evbdel" data-act="ev_del" aria-label="Elimina eventi"><span class="i">−</span><span class="t">Elimina</span></button></div></div>'+
+   '<input class="search" id="evsearch" type="search" placeholder="Cerca un evento…" value="'+esc(evq)+'"><div id="evdbar"></div><div id="evlist"></div>';
+  listEv();
+}
+function evRow(e,past){
+  var d=parseIso(e.day),n=(e.files||[]).length;
+  return '<div class="urow'+(esel[e.id]?' sel':'')+'" data-erow="'+esc(e.id)+'" style="cursor:pointer;align-items:center">'+(evm?'<input type="checkbox"'+(esel[e.id]?' checked':'')+' aria-label="Seleziona">':'')+
+   '<div class="evd'+(past?' past':'')+'"><b>'+d.getDate()+'</b><span>'+MESI3[d.getMonth()]+'</span></div>'+
+   '<div class="cells two"><b>'+esc(e.t)+'</b><span>'+GIORNI3[d.getDay()]+' '+fdate(e.day)+' · '+esc(timeTxt(e))+(e.luogo?' · '+esc(e.luogo):'')+(n?' · <span class="evc">'+IC.clip+n+'</span>':'')+'</span></div></div>';
+}
+function listEv(){
+  if(!document.getElementById('evlist'))return;
+  var q=evq.toLowerCase().trim(),today=iso(new Date()),n=Object.keys(esel).length;
+  var L=EVT.filter(function(e){return !q||(e.t+' '+(e.luogo||'')).toLowerCase().indexOf(q)>-1});
+  var up=L.filter(function(e){return e.day>=today}).sort(function(a,b){return (a.day+(a.ent||'')).localeCompare(b.day+(b.ent||''))});
+  var pa=L.filter(function(e){return e.day<today}).sort(function(a,b){return (b.day+(b.ent||'')).localeCompare(a.day+(a.ent||''))});
+  document.getElementById('evcount').textContent=EVT.length?EVT.length+(EVT.length===1?' evento':' eventi'):'Nessun evento';
+  document.getElementById('evbdel').classList.toggle('danger',evm);
+  document.getElementById('evdbar').innerHTML=evm?'<div class="dbar"><span>Seleziona gli eventi da eliminare ('+n+')</span><div><button data-act="ev_cancel">Annulla</button><button class="danger" data-act="ev_confirm"'+(n?'':' disabled')+'>Elimina</button></div></div>':'';
+  var h='';
+  if(up.length)h+='<h3 class="ih" style="margin-top:6px">In programma</h3>'+up.map(function(e){return evRow(e,false)}).join('');
+  if(pa.length)h+='<h3 class="ih">Passati</h3>'+pa.map(function(e){return evRow(e,true)}).join('');
+  if(!h)h=EVT.length?'<div class="empty">Nessun evento trovato.</div>':'<div class="empty">Nessun evento. Creane uno con +.</div>';
+  document.getElementById('evlist').innerHTML=h;
+}
+function refreshEv(){if(cur==='home')render();else if(cur==='eventi')listEv()}
+// ---- dettaglio ----
+function evFilesHtml(e,act){
+  return (e.files||[]).map(function(f,i){
+    return '<div class="fdoc"><span class="fic">'+IC.clip+'</span><div class="fnm"><b>'+esc(f.name)+'</b><small>'+esc(fsize(f.size||0))+'</small></div><div class="fbt">'+
+     '<button class="ib" data-act="ev_view" data-id="'+esc(e.id)+'" data-i="'+i+'" aria-label="Apri '+esc(f.name)+'" title="Apri">'+IC.eye+'</button>'+
+     '<button class="ib" data-act="ev_dl" data-id="'+esc(e.id)+'" data-i="'+i+'" aria-label="Scarica '+esc(f.name)+'" title="Scarica">'+IC.down+'</button></div></div>';
+  }).join('');
+}
+function evDetail(id){
+  var e=findE(id);if(!e)return;
+  var i=esc(e.id),n=(e.files||[]).length;
+  modal('<h3>'+esc(e.t)+'</h3><dl class="det"><dt>Data</dt><dd>'+esc(dayLong(parseIso(e.day)))+'</dd><dt>Orario</dt><dd>'+esc(timeTxt(e))+'</dd><dt>Luogo</dt><dd>'+esc(e.luogo||'—')+'</dd></dl>'+
+   (e.desc?'<div class="evdesc">'+esc(e.desc)+'</div>':'')+
+   '<div class="fdocs"><b>Allegati'+(n?' ('+n+')':'')+'</b>'+(n?evFilesHtml(e):'<div class="status">Nessun allegato.</div>')+'<div class="status" id="evst"></div></div>'+
+   '<div class="mrow"><button class="danger" data-act="ev_rm" data-id="'+i+'" style="margin-right:auto">Elimina</button><button data-act="mclose">Chiudi</button><button class="pri" data-act="ev_edit" data-id="'+i+'">Modifica</button></div>');
+  document.querySelector('#modal .mbox').classList.add('wide');
+}
+async function evBlob(f){
+  var b=f.blob;
+  if(!b){var r=await fetch('/_blob/'+f.id);b=await r.blob()}
+  var t=guessType(f.name,f.type||b.type);
+  return b.type===t?b:new Blob([b],{type:t});
+}
+async function evView(id,i){
+  var e=findE(id),f=e&&e.files[i];if(!f)return;
+  st('evst','Apertura in corso…');
+  try{
+    var b=await evBlob(f),url=URL.createObjectURL(b),img=/^image\//.test(b.type),pdf=b.type==='application/pdf';
+    modal('<h3>'+esc(f.name)+'</h3><div class="status">'+esc(e.t)+' · '+esc(fsize(f.size||b.size))+'</div>'+
+     (img?'<img class="dview" src="'+url+'" alt="'+esc(f.name)+'">':pdf?'<iframe class="dview" src="'+url+'" title="'+esc(f.name)+'"></iframe>':'<div class="empty">Anteprima non disponibile per questo tipo di file: usa Scarica.</div>')+
+     (img||pdf?'<div class="status">Se non vedi l’anteprima usa Scarica o <a href="'+url+'" target="_blank" rel="noopener">apri in una nuova scheda</a>.</div>':'')+
+     '<div class="mrow"><button data-act="ev_back" data-id="'+esc(e.id)+'">Indietro</button><button class="pri" data-act="ev_dl" data-id="'+esc(e.id)+'" data-i="'+i+'">Scarica</button></div>');
+    document.querySelector('#modal .mbox').classList.add('wide');
+  }catch(err){st('evst','Impossibile aprire il file. Riprova.')}
+}
+async function evDl(id,i){
+  var e=findE(id),f=e&&e.files[i];if(!f)return;
+  try{var b=await evBlob(f);await saveBlob(b,f.name)}catch(err){st('evst','Download non riuscito. Riprova.')}
+}
+// ---- creazione / modifica ----
+function evListHtml(){
+  return evF.length?evF.map(function(f,i){
+    return '<div class="fdoc"><span class="fic">'+IC.clip+'</span><div class="fnm"><b>'+esc(f.name)+'</b><small>'+esc(fsize(f.size||0))+(f.blob&&!f.id?' · da salvare':'')+'</small></div><div class="fbt"><button class="ib" type="button" data-act="ev_frm" data-i="'+i+'" aria-label="Rimuovi '+esc(f.name)+'" title="Rimuovi"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div></div>';
+  }).join(''):'<div class="status">Nessun allegato.</div>';
+}
+function evFRefresh(){var l=document.getElementById('evfl');if(l)l.innerHTML=evListHtml()}
+function evForm(id){
+  var e=id?findE(id):null;evid=e?e.id:null;evRm=[];
+  evF=e?(e.files||[]).map(function(f){return {id:f.id||null,blob:f.blob||null,name:f.name,type:f.type,size:f.size}}):[];
+  var o=e||{t:'',day:iso(new Date()),ent:'',usc:'',luogo:'',desc:''};
+  modal('<h3>'+(e?'Modifica evento':'Nuovo evento')+'</h3>'+
+   '<label>Titolo<input id="ev_t" type="text" placeholder="es. Open day, Workshop…"></label>'+
+   '<label>Data<input id="ev_d" type="date"></label>'+
+   '<div class="frow"><label>Inizio (facoltativo)<input id="ev_e" type="time"></label><label>Fine (facoltativa)<input id="ev_u" type="time"></label></div>'+
+   '<label>Luogo<input id="ev_l" type="text"></label>'+
+   '<label>Descrizione<textarea id="ev_n"></textarea></label>'+
+   '<div class="fdocs"><b>Allegati</b><div id="evfl" style="display:flex;flex-direction:column;gap:8px"></div>'+
+   '<label class="addf">'+IC.clip+' Aggiungi file<input type="file" multiple data-evup hidden></label>'+
+   '<div class="status" id="evfs">Qualsiasi tipo di file (PDF, foto, documenti), fino a 15 MB ciascuno, massimo '+EVFILES+' file.</div></div>'+
+   '<div class="status" id="ev_st"></div>'+
+   '<div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="ev_sv" data-act="ev_save">Salva</button></div>');
+  document.querySelector('#modal .mbox').classList.add('wide');
+  document.getElementById('ev_t').value=o.t;document.getElementById('ev_d').value=o.day;document.getElementById('ev_e').value=o.ent||'';document.getElementById('ev_u').value=o.usc||'';document.getElementById('ev_l').value=o.luogo||'';document.getElementById('ev_n').value=o.desc||'';
+  evFRefresh();
+}
+function evAddFiles(list){
+  var msg=[];
+  for(var i=0;i<list.length;i++){
+    var f=list[i];
+    if(evF.length>=EVFILES){msg.push('Massimo '+EVFILES+' file per evento.');break}
+    if(f.size>EVMAX){msg.push('«'+f.name+'» supera i 15 MB.');continue}
+    evF.push({id:null,blob:f,name:f.name,type:guessType(f.name,f.type),size:f.size});
+  }
+  evFRefresh();st('evfs',msg.length?msg.join(' '):'Allegati pronti: si salvano con Salva.');
+}
+async function saveEv(){
+  var t=document.getElementById('ev_t').value.trim(),day=document.getElementById('ev_d').value,en=document.getElementById('ev_e').value,us=document.getElementById('ev_u').value;
+  if(!t){document.getElementById('ev_t').focus();st('ev_st','Scrivi il titolo dell’evento.');return}
+  if(!day){st('ev_st','Scegli la data.');return}
+  if(us&&!en){st('ev_st','Indica anche l’ora di inizio.');return}
+  if(en&&us&&tmin(us)<=tmin(en)){st('ev_st','La fine deve essere dopo l’inizio.');return}
+  var nw=evF.filter(function(f){return f.blob&&!f.id}).length;
+  if(nw&&dbEvt&&!caps.assets){st('ev_st','Archivio file non disponibile per questo profilo: rimuovi gli allegati per salvare.');return}
+  var b=document.getElementById('ev_sv');b.disabled=true;b.textContent='Salvataggio…';
+  try{
+    var files=[];
+    for(var i=0;i<evF.length;i++){
+      var f=evF[i];
+      if(f.blob&&!f.id&&caps.assets){var a=await caps.assets.upload(f.blob);files.push({id:a.id,name:f.name,type:f.type,size:f.size})}
+      else if(f.id)files.push({id:f.id,name:f.name,type:f.type,size:f.size});
+      else files.push({id:null,blob:f.blob,name:f.name,type:f.type,size:f.size});
+    }
+    var o={t:t,day:day,ent:en,usc:us,luogo:document.getElementById('ev_l').value.trim(),desc:document.getElementById('ev_n').value.trim(),files:files};
+    if(evid){var e=findE(evid);Object.keys(o).forEach(function(k){e[k]=o[k]});if(dbEvt)await dbEvt.doc(String(evid)).update(o)}
+    else{if(dbEvt)await dbEvt.add(o);else{o.id='e'+(++eid)+'_'+Date.now();EVT.push(o)}}
+    if(caps.assets){for(var j=0;j<evRm.length;j++){try{await caps.assets.delete(evRm[j])}catch(x){}}}
+    closeModal();listEv();
+  }catch(err){b.disabled=false;b.textContent='Salva';st('ev_st','Salvataggio non riuscito. Riprova.')}
+}
+async function delEv(ids){
+  for(var i=0;i<ids.length;i++){
+    var e=findE(ids[i]);if(!e)continue;
+    if(caps.assets){for(var j=0;j<(e.files||[]).length;j++){if(e.files[j].id){try{await caps.assets.delete(e.files[j].id)}catch(x){}}}}
+    if(dbEvt){try{await dbEvt.doc(String(e.id)).delete()}catch(x){}}
+  }
+  EVT=EVT.filter(function(x){return ids.indexOf(String(x.id))<0});
+  esel={};evm=false;closeModal();listEv();
+}
+document.addEventListener('input',function(e){if(e.target.id==='evsearch'){evq=e.target.value;listEv()}});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.hasAttribute&&t.hasAttribute('data-evup')&&t.files&&t.files.length){var L=[].slice.call(t.files);t.value='';evAddFiles(L)}
+});
+document.addEventListener('click',function(e){
+  var a=e.target.closest('[data-act]');
+  if(a){var k=a.getAttribute('data-act'),id=a.getAttribute('data-id'),i=+a.getAttribute('data-i');
+    if(k==='ev_add')evForm(null);
+    else if(k==='ev_edit')evForm(id);
+    else if(k==='ev_save')saveEv();
+    else if(k==='ev_frm'){var f=evF[i];if(f){if(f.id)evRm.push(f.id);evF.splice(i,1);evFRefresh()}}
+    else if(k==='ev_view')evView(id,i);
+    else if(k==='ev_dl')evDl(id,i);
+    else if(k==='ev_back')evDetail(id);
+    else if(k==='ev_del'){evm=!evm;esel={};listEv()}
+    else if(k==='ev_cancel'){evm=false;esel={};listEv()}
+    else if(k==='ev_confirm'){var n=Object.keys(esel).length;if(!n)return;modal('<h3>Elimina eventi</h3><p>Vuoi eliminare '+n+(n===1?' evento selezionato':' eventi selezionati')+' con i relativi allegati? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="ev_dodel">Elimina</button></div>')}
+    else if(k==='ev_rm'){var ee=findE(id);modal('<h3>Elimina evento</h3><p>Vuoi eliminare «'+esc(ee?ee.t:'')+'» con i relativi allegati? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="ev_dodel" data-id="'+esc(id)+'">Elimina</button></div>')}
+    else if(k==='ev_dodel')delEv(id?[String(id)]:Object.keys(esel));
+    return;
+  }
+  if(cur!=='eventi')return;
+  var r=e.target.closest('[data-erow]');
+  if(r){var i2=r.getAttribute('data-erow');if(evm){if(esel[i2])delete esel[i2];else esel[i2]=1;listEv()}else evDetail(i2)}
 });
 
 // ---- Scalare le lezioni: quando arriva l'orario di una voce del calendario, per ogni utente assegnato si registra

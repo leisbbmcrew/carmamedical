@@ -9,7 +9,7 @@ App di gestione palestra. Questa versione contiene la **home** con le sezioni pr
 | Utenti | Elenco con ricerca, creazione ed eliminazione; toccando un utente si apre il menu Anagrafica / Scheda allenamento / Ingressi | Disponibile |
 | Schede allenamento | Elenco utenti; per ogni utente crea ed elimina schede, storico con download e andamento degli esercizi | Disponibile (struttura delle schede provvisoria) |
 | Calendario | Viste giorno, settimana, mese e anno; lezioni e accessi con gli utenti assegnati alle fasce orarie | Disponibile |
-| Eventi | Open day, workshop e iniziative | Da sviluppare |
+| Eventi | Creazione di open day, workshop e iniziative con file allegati | Disponibile |
 | Avvisi | Pacchetti in esaurimento e utenti che non rinnovano | Disponibile |
 
 ## Visualizzazione
@@ -140,3 +140,14 @@ Sezione nel menu, dopo Eventi, con un numero rosso quando ci sono avvisi attivi.
 **Non rinnova.** Accanto a ogni utente c'è il tasto **Non rinnova** (c'è anche nella sua scheda ingressi): l'utente esce dagli avvisi e compare nell'elenco *Non rinnovano* di questa sezione e con l'etichetta "non rinnova" nell'elenco Utenti. Si riattiva da solo quando gli viene caricato un nuovo pacchetto, oppure a mano con **Riattiva**.
 
 Cancellando un utente si cancellano anche i suoi ingressi e lo si toglie dai pacchetti condivisi (un pacchetto senza più utenti viene eliminato). Eliminando un pacchetto, gli ingressi già registrati restano nel registro senza pacchetto. Come per le altre sezioni, fuori da claude.ai pacchetti e ingressi restano in memoria fino al ricaricamento della pagina; all'apertura ci sono alcuni dati di esempio.
+
+## Eventi
+
+Elenco degli eventi diviso in **In programma** (dal più vicino) e **Passati** (dal più recente), con ricerca per titolo o luogo. Nella home la card mostra quanti eventi sono in programma.
+
+- **Crea (+):** titolo e data sono obbligatori; inizio, fine, luogo e descrizione sono facoltativi (senza orario l'evento è "giornata intera"). Se c'è la fine deve esserci anche l'inizio, e la fine deve essere dopo l'inizio.
+- **Allegati:** con **Aggiungi file** si scelgono uno o più file di qualsiasi tipo (PDF, foto, documenti Word o Excel, ecc.), fino a 15 MB ciascuno e al massimo 10 per evento. I file si caricano davvero quando si preme **Salva**; prima si possono togliere con la X.
+- **Dettaglio:** toccando un evento si vede il riepilogo con gli allegati. Con l'occhio si apre l'anteprima (foto e PDF; per gli altri tipi di file serve scaricare), con la freccia in giù si scarica il file con il suo nome originale. Da qui si passa a **Modifica** (si possono aggiungere o togliere allegati) o **Elimina**.
+- **Elimina (−):** si selezionano più eventi e si cancellano insieme ai loro allegati.
+
+Come per le altre sezioni, fuori da claude.ai eventi e allegati restano in memoria fino al ricaricamento della pagina; all'apertura ci sono due eventi di esempio.
