@@ -1381,8 +1381,12 @@ async function dropIngOf(id){
   if(ids.length)await delIng(ids);
 }
 // ---- pacchetti ----
+function pkRest(){
+  var t=document.getElementById('pk_t'),r=document.getElementById('pk_r'),p=pkid?findP(pkid):null;
+  if(t&&r&&p&&t.value!=='')r.value=Math.max(0,Math.floor(+t.value)-usedOf(p));
+}
 function pkChips(){
-  var t=document.getElementById('pk_t');if(!t)return;var v=+t.value;
+  var t=document.getElementById('pk_t');if(!t)return;var v=+t.value;pkRest();
   [].forEach.call(document.querySelectorAll('#pk_ch .chip'),function(c){c.classList.toggle('sel',+c.getAttribute('data-n')===v)});
 }
 function pkUsersHtml(){
@@ -1401,7 +1405,7 @@ function pkForm(id){
   psel={};(o.uids||[]).forEach(function(x){psel[String(x)]=1});
   modal('<h3>'+(p?'Modifica pacchetto':'Nuovo pacchetto')+'</h3>'+
    '<div style="font-size:13px;color:var(--muted)">Numero di lezioni</div><div class="chips" id="pk_ch">'+[10,20,30].map(function(n){return '<button type="button" class="chip" data-act="pk_n" data-n="'+n+'">'+n+'</button>'}).join('')+'</div>'+
-   '<label>Oppure un numero a scelta<input id="pk_t" type="number" min="1" inputmode="numeric"></label>'+
+   '<label>'+(p?'Totale lezioni del pacchetto':'Oppure un numero a scelta')+'<input id="pk_t" type="number" min="1" inputmode="numeric"></label>'+(p?'<label>Lezioni rimanenti (modificabili a mano)<input id="pk_r" type="number" min="0" inputmode="numeric"></label><div class="status">Cambiando le rimanenti si aggiorna il totale del pacchetto: ne hai già usate '+usedOf(p)+'.</div>':'')+
    '<label>Data di acquisto<input id="pk_d" type="date"></label><label>Note<input id="pk_n" type="text"></label>'+
    '<b id="pk_uc" style="font-size:14px;margin-top:4px"></b><div class="status">Gli utenti selezionati usano le stesse lezioni del pacchetto: ogni loro ingresso ne scala una.</div>'+
    '<input class="search" id="pk_q" type="search" placeholder="Cerca utente…" style="margin:0"><div class="cul" id="pk_ul"></div><div class="status" id="pk_st"></div>'+
@@ -1443,6 +1447,9 @@ async function dropUserFromPac(id){
 document.addEventListener('input',function(e){
   var id=e.target.id;
   if(id==='pk_t')pkChips();
+  else if(id==='pk_r'){var rr=document.getElementById('pk_r'),pp2=pkid?findP(pkid):null;
+    if(rr&&pp2&&rr.value!==''){document.getElementById('pk_t').value=usedOf(pp2)+Math.max(0,Math.floor(+rr.value));
+      [].forEach.call(document.querySelectorAll('#pk_ch .chip'),function(c){c.classList.toggle('sel',+c.getAttribute('data-n')===+document.getElementById('pk_t').value)})}}
   else if(id==='pk_q')pkRefresh();
 });
 document.addEventListener('change',function(e){
