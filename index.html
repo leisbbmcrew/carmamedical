@@ -321,6 +321,11 @@ iframe.dview{height:62vh}
 </div>
 </div>
 <script>
+/* Collegamento al backend: l'app aspetta l'accesso e riceve il database da carma-start.js */
+window.__carma=new Promise(function(r){window.__carmaResolve=r});
+window.claude={use:function(n){return n==='db'?window.__carma:Promise.resolve(null)}};
+</script>
+<script>
 // Impostare a true quando il programma è finito, per mostrare la schermata di login
 var LOGIN_ATTIVO = false;
 if (LOGIN_ATTIVO) { var l = document.getElementById('login'); l.classList.add('on'); l.setAttribute('aria-hidden','false'); }
@@ -1743,5 +1748,6 @@ setView(window.innerWidth>=768?'tablet':'mobile');
 render();
 autoIng();
 </script>
+<script type="module" src="carma-start.js"></script>
 </body>
 </html>

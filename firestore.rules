@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function staff() { return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && me().get('attivo', true) == true; }
+    function admin() { return staff() && me().get('admin', false) == true; }
+
+    /* Account dello staff: li crea e li modifica solo l'admin (dalla console Firebase); ognuno legge il proprio. */
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || admin());
+      allow write: if admin();
+    }
+
+    /* Chiavi di cifratura dei dati su Telegram, una per sezione. Si creano una volta sola e non si modificano. */
+    match /chiavi/{id} {
+      allow read: if staff();
+      allow create: if staff();
+      allow update: if false;
+      allow delete: if admin();
+    }
+
+    /* Dati delle sezioni (utenti, schede, calendario, ingressi, pacchetti, eventi): usati come archivio
+       finché Telegram non è configurato e come copia di riserva. */
+    match /sections/{sec}/{coll}/{id} {
+      allow read, write: if staff();
+    }
+
+    match /app/{id} {
+      allow read: if staff();
+      allow write: if admin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
