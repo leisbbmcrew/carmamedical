@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagnosi Telegram</title>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;max-width:720px;margin:0 auto;padding:20px;background:#0f1720;color:#e8eef5;line-height:1.4}
+  h1{font-size:22px;margin:0 0 6px} p{opacity:.8;font-size:14px;margin:0 0 16px}
+  .r{display:grid;grid-template-columns:24px 1fr;gap:2px 8px;padding:8px 0;border-bottom:1px solid #243445;font-size:14px}
+  .r small{grid-column:2;opacity:.75;word-break:break-word;white-space:pre-wrap;font-size:12px}
+  b.ok{color:#5be08a} b.ko{color:#ff8a80} b.wa{color:#ffd166}
+  button,input{font-size:16px;padding:10px 14px;border-radius:10px;border:1px solid #33465a;background:#17212c;color:inherit}
+  button{background:#2f8cff;border:0;font-weight:600;cursor:pointer;margin:6px 6px 6px 0}
+  #tel{margin:16px 0;padding:14px;background:#17212c;border-radius:12px}
+  #tel p{margin:0 0 8px}
+</style>
+</head>
+<body>
+<h1>Diagnosi collegamento Telegram</h1>
+<p>I controlli partono da soli e si fermano sul primo passaggio che non va. In fondo trovi il pulsante per copiare il report e inviarmelo.</p>
+<div id="out"></div>
+<div id="tel" hidden>
+  <p><b>Prova invio codice</b> (parte una richiesta vera a Telegram: usala una volta sola, per evitare blocchi per troppi tentativi).</p>
+  <input id="ph" type="tel" placeholder="+39…">
+  <button id="send">Invia codice di prova</button>
+</div>
+<button id="copy">Copia il report</button>
+
+<script type="module">
+const out=document.getElementById('out'),report=[];
+const T=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg||'nessuna risposta dopo '+ms/1000+' s')),ms))]);
+function row(name){
+  const d=document.createElement('div');d.className='r';
+  const i=document.createElement('b'),n=document.createElement('span'),m=document.createElement('small');
+  i.textContent='…';n.textContent=name;d.append(i,n,m);out.appendChild(d);
+  const set=(sym,cls,txt,tag)=>{i.textContent=sym;i.className=cls;m.textContent=txt||'';report.push(tag+' '+name+(txt?' – '+txt:''))};
+  return {live:t=>{m.textContent=t},ok:t=>set('✓','ok',t,'OK  '),ko:t=>set('✗','ko',t,'KO  '),wa:t=>set('!','wa',t,'ATT ')};
+}
+async function step(name,fn){
+  const r=row(name),t0=performance.now(),ms=()=>Math.round(performance.now()-t0)+' ms';
+  try{const v=await fn(r);if(v&&v.warn)r.wa(v.warn+' · '+ms());else r.ok((v?v+' · ':'')+ms());return true}
+  catch(e){r.ko(((e&&e.message)||String(e))+' · '+ms());return false}
+}
+const hasWS=h=>new Promise((res,rej)=>{
+  let w;try{w=new WebSocket('wss://'+h+'/apiws','binary')}catch(e){return rej(e)}
+  const t=setTimeout(()=>{try{w.close()}catch(e){}rej(new Error('nessuna risposta dopo 8 s'))},8000);
+  w.onopen=()=>{clearTimeout(t);w.close();res('connessione aperta')};
+  w.onerror=()=>{clearTimeout(t);rej(new Error('connessione rifiutata o bloccata'))};
+});
+
+let cfg=null,tgm=null,tg=null;
+const ok1=await step('Pagina e browser',async()=>{
+  if(location.protocol==='file:')throw new Error('la pagina è aperta da file: usa l’indirizzo https di GitHub Pages');
+  return location.origin+' · '+(navigator.onLine?'online':'OFFLINE')+' · '+navigator.userAgent.slice(0,90);
+});
+const ok2=ok1&&await step('Configurazione (telegram-config.js)',async()=>{
+  cfg=await import('./telegram-config.js?'+Date.now());
+  const id=String(cfg.TG_API_ID).trim(),h=String(cfg.TG_API_HASH).trim();
+  const p=[];
+  if(!/^\d{5,10}$/.test(id))throw new Error('api_id non valido: deve essere solo un numero (ora: "'+(id==='INSERISCI'?'INSERISCI':id.slice(0,12))+'")');
+  if(!/^[0-9a-f]{32}$/i.test(h))throw new Error('api_hash non valido: deve essere di 32 caratteri esadecimali (lunghezza attuale: '+h.length+', controlla spazi e virgolette)');
+  return 'api_id e api_hash nel formato giusto · gruppo: "'+cfg.TG_GROUP+'"';
+});
+const ok3=ok2&&await step('File libreria telegram-lib.js sul sito',async()=>{
+  const r=await T(fetch('./telegram-lib.js',{cache:'no-store'}),60000);
+  if(!r.ok)throw new Error('risposta '+r.status+': il file non è online (caricalo nel repository e attendi 1-2 minuti)');
+  const b=await r.arrayBuffer(),head=new TextDecoder().decode(b.slice(0,40));
+  if(/<!doctype|<html/i.test(head))throw new Error('il server ha restituito una pagina web al posto del file');
+  if(b.byteLength<1_000_000)throw new Error('file troppo piccolo ('+Math.round(b.byteLength/1024)+' KB): caricamento incompleto, atteso circa 3,6 MB');
+  return Math.round(b.byteLength/1024)+' KB';
+});
+const ok4=ok3&&await step('Altri file dell’app',async r=>{
+  const miss=[];
+  for(const f of ['telegram.js','fsx.js','cifra.js','cifra-core.js','firebase-config.js','carma-start.js','index.html']){
+    try{const x=await T(fetch('./'+f,{cache:'no-store'}),20000);if(!x.ok)miss.push(f+' ('+x.status+')')}catch(e){miss.push(f+' (errore)')}
+  }
+  if(miss.length)throw new Error('mancano: '+miss.join(', '));
+  return 'tutti presenti';
+});
+const ok5=ok4&&await step('Raggiungibilità di Google (Firebase) e di esm.sh',async()=>{
+  const bad=[];
+  for(const u of ['https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js','https://esm.sh/buffer@6.0.3']){
+    try{await T(fetch(u,{mode:'no-cors'}),15000)}catch(e){bad.push(u.split('/')[2])}
+  }
+  if(bad.length)throw new Error('non raggiungibile: '+bad.join(', ')+' (rete, antivirus o estensione che blocca)');
+  return 'raggiungibili';
+});
+const ok6=ok5&&await step('Caricamento modulo Telegram (include il componente Buffer)',async()=>{
+  tgm=await T(import('./telegram.js?'+Date.now()),90000,'il modulo non si carica entro 90 s (probabile blocco di esm.sh)');
+  if(tgm.shimError)throw new Error('Buffer non disponibile: '+tgm.shimError);
+  return 'ok';
+});
+const ok7=ok6&&await step('Caricamento libreria GramJS',async r=>{
+  const lines=[];
+  tg=await T(tgm.loadTg(t=>{lines.push(t);r.live(lines.slice(-3).join('\n'))}),180000);
+  return 'caricata da '+tgm.libSource;
+});
+let wsOk=0;
+if(ok7){
+  for(const h of ['pluto.web.telegram.org','venus.web.telegram.org','aurora.web.telegram.org']){
+    if(await step('Telegram raggiungibile: '+h+' (test indicativo)',()=>hasWS(h)))wsOk++;
+  }
+}
+const ok8=ok7&&await step('Connessione del client a Telegram',async()=>{
+  const c=tgm.newClient(tg,'');
+  try{await T(c.connect(),30000,'nessuna risposta da Telegram dopo 30 s')}finally{try{await c.disconnect()}catch(e){}}
+  return 'connesso'+(wsOk===0?' (nonostante il test dei WebSocket sopra)':'');
+});
+if(ok8){document.getElementById('tel').hidden=false;row('Tutti i controlli superati').ok('puoi provare l’invio del codice qui sotto')}
+
+document.getElementById('send').onclick=async()=>{
+  const phone=document.getElementById('ph').value.replace(/[\s\-()]/g,'');
+  if(!/^\+\d{8,15}$/.test(phone)){row('Numero').ko('scrivi il numero con il prefisso internazionale, es. +39…');return}
+  const btn=document.getElementById('send');btn.disabled=true;
+  await step('Invio codice a '+phone.slice(0,4)+'…'+phone.slice(-2),async()=>{
+    const c=tgm.newClient(tg,'');
+    try{
+      await T(c.connect(),30000,'connessione non riuscita');
+      const sent=await T(c.sendCode({apiId:Number(String(cfg.TG_API_ID).trim()),apiHash:String(cfg.TG_API_HASH).trim()},phone,false),40000,'Telegram non risponde alla richiesta del codice');
+      return 'richiesta accettata: il codice arriva '+(sent.isCodeViaApp?'nell’app Telegram (chat “Telegram”), non via SMS':'via SMS o chiamata');
+    }catch(e){
+      throw new Error(tgm.tgErrText(e)+' ['+((e&&(e.errorMessage||e.message))||e)+']');
+    }finally{try{await c.disconnect()}catch(e){}}
+  });
+  btn.disabled=false;
+};
+document.getElementById('copy').onclick=async e=>{
+  const t='Diagnosi Carma Telegram\n'+report.join('\n')+'\n--- console ---\n'+((tgm&&tgm.consoleLog)||[]).slice(-12).join('\n');
+  try{await navigator.clipboard.writeText(t);e.target.textContent='Copiato'}catch(_){prompt('Copia il report:',t)}
+};
+</script>
+</body>
+</html>
