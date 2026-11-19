@@ -75,7 +75,7 @@ export function newClient(tg,saved){
    ui = {phone(), code(), password()} che restituiscono una Promise<string>. */
 export async function tgLogin(tg,client,ui,log=()=>{}){
   const creds={apiId:Number(String(TG_API_ID).trim()),apiHash:String(TG_API_HASH).trim()};
-  const phone=(await ui.phone()).replace(/[\s\-()]/g,'');
+  const phone=(await ui.phone()).trim();   /* il numero viene inviato esattamente come scritto (es. +39 320 0000000) */
   log('Invio del numero a Telegram');
   const sent=await withTimeout(client.sendCode(creds,phone,false),40000,'TIMEOUT_SENDCODE');
   log('Codice inviato'+(sent.isCodeViaApp?' (nell’app Telegram)':' (via SMS o chiamata)'));

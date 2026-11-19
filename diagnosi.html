@@ -110,8 +110,8 @@ const ok8=ok7&&await step('Connessione del client a Telegram',async()=>{
 if(ok8){document.getElementById('tel').hidden=false;row('Tutti i controlli superati').ok('puoi provare l’invio del codice qui sotto')}
 
 document.getElementById('send').onclick=async()=>{
-  const phone=document.getElementById('ph').value.replace(/[\s\-()]/g,'');
-  if(!/^\+\d{8,15}$/.test(phone)){row('Numero').ko('scrivi il numero con il prefisso internazionale, es. +39…');return}
+  const phone=document.getElementById('ph').value.trim();   /* inviato come scritto */
+  if(!/^\+\d{8,15}$/.test(phone.replace(/[\s\-()]/g,''))){row('Numero').ko('scrivi il numero con il prefisso internazionale, es. +39…');return}
   const btn=document.getElementById('send');btn.disabled=true;
   await step('Invio codice a '+phone.slice(0,4)+'…'+phone.slice(-2),async()=>{
     const c=tgm.newClient(tg,'');
