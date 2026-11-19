@@ -6,7 +6,7 @@ import {getAuth,signInWithEmailAndPassword,signOut} from "https://www.gstatic.co
 import {getDoc,doc as sdkDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {getFirestore,collection,doc,onSnapshot,addDoc,setDoc,updateDoc,deleteDoc} from "./fsx.js";
-import {tgConfigured,hasSession,clearSession,loadTg,newClient,tgLogin,tgErrText,withTimeout} from "./telegram.js";
+import {tgConfigured,hasSession,clearSession,loadTg,newClient,tgLogin,tgErrText,withTimeout,consoleLog,libSource,shimError} from "./telegram.js";
 
 const app=initializeApp(firebaseConfig),auth=getAuth(app),fdb=getFirestore(app);
 
@@ -38,6 +38,25 @@ function ask(title,msg,fields,sms){
   });
 }
 
+/* Schermata di attesa con le ultime operazioni (così si vede se la richiesta parte davvero) */
+const righe=[];
+function stato(t){
+  righe.push(t);if(righe.length>6)righe.shift();
+  if(!ov.isConnected)document.body.appendChild(ov);
+  card.textContent='';
+  card.append(el('h2','Collegamento a Telegram','margin:0 0 8px;font-size:20px'),
+    el('p','Attendi, non chiudere la pagina.','margin:0 0 12px;font-size:14px;opacity:.8'),
+    el('pre',righe.join('\n'),'font-size:12px;white-space:pre-wrap;opacity:.75;margin:0'));
+}
+function avviso(title,msg,dett,btn){
+  if(!ov.isConnected)document.body.appendChild(ov);
+  card.textContent='';
+  card.append(el('h2',title,'margin:0 0 8px;font-size:20px'),el('p',msg,'margin:0 0 12px;font-size:14px;line-height:1.4'));
+  if(dett)card.appendChild(el('pre',dett,'font-size:11px;white-space:pre-wrap;opacity:.7;margin:0 0 14px;max-height:160px;overflow:auto'));
+  const b=el('button',btn||'Riprova',S.btn);card.appendChild(b);
+  return new Promise(res=>{b.onclick=()=>res()});
+}
+
 /* ---- accesso Firebase: solo account abilitati (documento users/<uid>) ---- */
 async function accessoFirebase(){
   await auth.authStateReady();
@@ -59,22 +78,27 @@ async function accessoTelegram(){
   if(!tgConfigured()||hasSession())return;
   const ui={
     phone:async()=>(await ask('Collega Telegram','Inserisci il numero, con prefisso (es. +39…), dell’account Telegram che fa parte del gruppo dati.',[{type:'tel',ph:'+39…',ac:'tel'}]))[0],
-    code:async()=>{const r=await ask('Codice Telegram','Inserisci il codice arrivato nell’app Telegram o via SMS.',[{ph:'Codice',ac:'one-time-code'}],true);return r==='__SMS__'?r:r[0].trim()},
+    code:async()=>{const r=await ask('Codice Telegram','Il codice arriva nell’app Telegram (chat “Telegram”) se l’account è già aperto su un altro dispositivo, altrimenti via SMS.',[{ph:'Codice',ac:'one-time-code'}],true);return r==='__SMS__'?r:r[0].trim()},
     password:async()=>(await ask('Password Telegram','Inserisci la password a due fattori di Telegram.',[{type:'password',ph:'Password'}]))[0],
     info:setInfo
   };
   for(;;){
     let client=null;
     try{
-      const tg=await loadTg();client=newClient(tg,'');
+      righe.length=0;stato('Carico la libreria Telegram…');
+      const tg=await loadTg(stato);
+      stato('Connessione a Telegram…');
+      client=newClient(tg,'');
       await withTimeout(client.connect(),30000,'TIMEOUT_CONNECT');
-      await tgLogin(tg,client,ui);
+      stato('Connesso.');
+      await tgLogin(tg,client,ui,stato);
       try{await client.disconnect()}catch(e){}
       return;
     }catch(e){
       try{if(client)await client.disconnect()}catch(_){}
       clearSession();
-      await ask('Telegram non collegato',tgErrText(e)+' Premi Continua per riprovare.',[{ph:'Scrivi qualcosa per riprovare'}]);
+      const dett=[shimError&&('Buffer: '+shimError),libSource&&('Libreria: '+libSource),...(e&&e.details||[]),...consoleLog.slice(-5)].filter(Boolean).join('\n');
+      await avviso('Telegram non collegato',tgErrText(e),dett,'Riprova');
     }
   }
 }
