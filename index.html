@@ -1283,7 +1283,8 @@ function renderAvvisi(){
   document.getElementById('main').innerHTML=h;
   updBadge();
 }
-function ingOf(u){return ING.filter(function(x){return String(x.uid)===String(u)}).sort(function(a,b){return (b.day+b.ent).localeCompare(a.day+a.ent)})}
+function regOf(u){return ING.filter(function(x){return String(x.uid)===String(u)}).sort(function(a,b){return (b.day+b.ent).localeCompare(a.day+a.ent)})}
+function ingOf(u){return ING.filter(function(x){return String(x.uid)===String(u)&&!x.adj}).sort(function(a,b){return (b.day+b.ent).localeCompare(a.day+a.ent)})}
 function findI(id){return ING.filter(function(x){return String(x.id)===String(id)})[0]}
 function durTxt(a,b){
   if(!b)return '';var m=tmin(b)-tmin(a);if(isNaN(m)||m<=0)return '';
@@ -1304,7 +1305,7 @@ function renderIng(){
   var u=find(iuid);if(!u){iuid=null;renderUtenti();return}
   document.getElementById('main').innerHTML='<button class="back" data-act="ing_back">← Utenti</button><h2>Ingressi</h2><p class="sub">'+esc(uname(u))+'</p><div id="inr"></div>'+
    '<div class="istats" id="istats"></div>'+
-   '<div class="dlh"><h3>Pacchetti</h3><div><button class="pb cam" data-act="pk_add">+ Pacchetto</button></div></div><div id="ipk"></div>'+
+   '<div class="dlh"><h3>Pacchetti</h3><div><button class="pb" data-act="lz_less">− Lezione</button><button class="pb" data-act="lz_more">+ Lezione</button><button class="pb cam" data-act="pk_add">+ Pacchetto</button></div></div><div id="ipk"></div>'+
    '<div class="dlh"><h3>Registro ingressi</h3><div><button class="pb cam" data-act="ing_add">+ Ingresso</button><button class="pb" id="ibdel" data-act="ing_del">Elimina</button></div></div>'+
    '<div id="idbar"></div><div id="ilist"></div><h3 class="ih">Prenotazioni in calendario</h3><div id="iprev"></div>';
   listIng();
@@ -1326,7 +1327,10 @@ function listIng(){
   document.getElementById('ipk').innerHTML=P.length?P.slice().reverse().map(pkHtml).join(''):'<div class="empty" style="padding:14px 0">Nessun pacchetto. Aggiungine uno con + Pacchetto (10, 20, 30 lezioni o un numero a scelta).</div>';
   document.getElementById('ibdel').classList.toggle('danger',idm);
   document.getElementById('idbar').innerHTML=idm?'<div class="dbar"><span>Seleziona gli ingressi da eliminare ('+n+')</span><div><button data-act="ing_cancel">Annulla</button><button class="danger" data-act="ing_confirm"'+(n?'':' disabled')+'>Elimina</button></div></div>':'';
-  document.getElementById('ilist').innerHTML=L.length?L.map(function(x){
+  var R=regOf(iuid);
+  document.getElementById('ilist').innerHTML=R.length?R.map(function(x){
+    if(x.adj){return '<div class="urow'+(isel[x.id]?' sel':'')+'" data-irow="'+esc(x.id)+'" style="cursor:'+(idm?'pointer':'default')+'">'+(idm?'<input type="checkbox"'+(isel[x.id]?' checked':'')+' aria-label="Seleziona">':'')+
+     '<div class="cells two"><b>'+GIORNI3[parseIso(x.day).getDay()]+' '+fdate(x.day)+'</b><span>'+esc(x.ent)+' · Lezione '+(x.adj>0?'aggiunta':'tolta')+(x.pkData?' · pacchetto del '+fdate(x.pkData)+' ('+x.da+' → '+x.a+')':'')+' · da '+esc(x.by||'operatore non indicato')+'</span></div></div>'}
     var d=durTxt(x.ent,x.usc),p=x.pid?findP(x.pid):null;
     return '<div class="urow'+(isel[x.id]?' sel':'')+'" data-irow="'+esc(x.id)+'" style="cursor:pointer">'+(idm?'<input type="checkbox"'+(isel[x.id]?' checked':'')+' aria-label="Seleziona">':'')+
      '<div class="cells two"><b>'+GIORNI3[parseIso(x.day).getDay()]+' '+fdate(x.day)+'</b><span>'+esc(x.ent)+(x.usc?'–'+esc(x.usc):' · uscita non registrata')+(d?' · '+d:'')+' · '+(p?'pacchetto da '+p.tot:'senza pacchetto')+(x.note?' · '+esc(x.note):'')+'</span></div></div>';
@@ -1377,7 +1381,7 @@ async function delIng(ids){
   isel={};idm=false;closeModal();listIng();
 }
 async function dropIngOf(id){
-  var ids=ingOf(id).map(function(x){return String(x.id)});
+  var ids=regOf(id).map(function(x){return String(x.id)});
   if(ids.length)await delIng(ids);
 }
 // ---- pacchetti ----
@@ -1429,6 +1433,26 @@ async function savePk(id){
     closeModal();listIng();
   }catch(err){b.disabled=false;b.textContent='Salva';st('pk_st','Salvataggio non riuscito. Riprova.')}
 }
+var lzBusy=false;
+/* +/− lezione: corregge di 1 il totale rimasto agendo sul pacchetto più vecchio ancora con lezioni (+ : se sono tutti esauriti, sul più recente) */
+async function lezioneDelta(d){
+  if(lzBusy)return;
+  var P=pacOf(iuid);
+  if(!P.length){modal('<h3>Nessun pacchetto</h3><p>Aggiungi prima un pacchetto con + Pacchetto.</p><div class="mrow"><button class="pri" data-act="mclose">Ok</button></div>');return}
+  var att=P.filter(function(p){return restOf(p)>0}),p=att[0]||(d>0?P[P.length-1]:null);
+  if(!p){modal('<h3>Nessuna lezione da togliere</h3><p>Tutti i pacchetti sono esauriti.</p><div class="mrow"><button class="pri" data-act="mclose">Ok</button></div>');return}
+  lzBusy=true;
+  try{
+    var tot=p.tot+d,prima=p.tot,pkData=p.data,pkId=String(p.id);
+    if(tot<1){if(dbPac){await dbPac.doc(String(p.id)).delete()}PAC=PAC.filter(function(x){return x!==p})}
+    else{p.tot=tot;if(dbPac)await dbPac.doc(String(p.id)).update({tot:tot})}
+    /* voce nel registro: quando, e chi era collegato (non conta come ingresso e non scala lezioni) */
+    var n=new Date(),lg={uid:String(iuid),day:iso(n),ent:hm(n.getHours()*60+n.getMinutes()),usc:'',note:'',pid:'',adj:d,pk:pkId,pkData:pkData,da:prima,a:Math.max(0,tot),by:(window.CARMA&&window.CARMA.chi)||''};
+    try{if(dbIng)await dbIng.add(lg);else{lg.id='i'+(++iid);ING.push(lg)}}catch(e2){console.warn('Voce di registro non salvata',e2)}
+    listIng();
+  }catch(err){modal('<h3>Modifica non salvata</h3><p>Riprova.</p><div class="mrow"><button class="pri" data-act="mclose">Ok</button></div>');listIng()}
+  finally{lzBusy=false}
+}
 async function delPac(id){
   var linked=ING.filter(function(x){return String(x.pid)===String(id)});
   for(var i=0;i<linked.length;i++){linked[i].pid='';if(dbIng){try{await dbIng.doc(String(linked[i].id)).update({pid:''})}catch(e){}}}
@@ -1472,6 +1496,8 @@ document.addEventListener('click',function(e){
     else if(k==='ing_rm')modal('<h3>Elimina ingresso</h3><p>Vuoi eliminare questo ingresso? La lezione torna disponibile nel pacchetto. L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="ing_dodel" data-id="'+esc(id)+'">Elimina</button></div>');
     else if(k==='ing_dodel')delIng(id?[String(id)]:Object.keys(isel));
     else if(k==='pk_add')pkForm(null);
+    else if(k==='lz_more')lezioneDelta(1);
+    else if(k==='lz_less')lezioneDelta(-1);
     else if(k==='pk_n'){var t=document.getElementById('pk_t');if(t){t.value=a.getAttribute('data-n');pkChips()}}
     else if(k==='pk_save')savePk(id||null);
     else if(k==='pk_rm'){var pp=findP(id),nl=pp?usedOf(pp):0;modal('<h3>Elimina pacchetto</h3><p>Vuoi eliminare il pacchetto da '+(pp?pp.tot:'')+' lezioni?'+(nl?' I '+nl+(nl===1?' ingresso':' ingressi')+' già registrati restano nel registro ma non sono più collegati a un pacchetto.':'')+' L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="pk_dorm" data-id="'+esc(id)+'">Elimina</button></div>')}
@@ -1486,7 +1512,7 @@ document.addEventListener('click',function(e){
   var pk=e.target.closest('[data-pk]');
   if(pk){pkForm(pk.getAttribute('data-pk'));return}
   var r=e.target.closest('[data-irow]');
-  if(r){var i2=r.getAttribute('data-irow');if(idm){if(isel[i2])delete isel[i2];else isel[i2]=1;listIng()}else ingForm(i2);return}
+  if(r){var i2=r.getAttribute('data-irow');if(idm){if(isel[i2])delete isel[i2];else isel[i2]=1;listIng()}else{var ix=findI(i2);if(!(ix&&ix.adj))ingForm(i2)}return}
   var c=e.target.closest('[data-ical]');
   if(c){calD=parseIso(c.getAttribute('data-ical'));calV='day';iuid=null;cur='calendario';render();window.scrollTo(0,0)}
 });

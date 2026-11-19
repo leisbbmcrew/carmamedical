@@ -64,6 +64,7 @@ function avviso(title,msg,dett,btn,skip){
 }
 
 /* ---- accesso Firebase: solo account abilitati (documento users/<uid>) ---- */
+let chi='';
 async function accessoFirebase(){
   await auth.authStateReady();
   let msg='Accedi con l’email dello staff.';
@@ -73,8 +74,8 @@ async function accessoFirebase(){
       try{await signInWithEmailAndPassword(auth,email.trim(),pw)}catch(e){msg='Email o password non corrette.';continue}
     }
     let abilitato=false;
-    try{const me=await getDoc(sdkDoc(fdb,'users',auth.currentUser.uid));abilitato=me.exists()&&me.data().attivo!==false}catch(e){}
-    if(abilitato)return;
+    try{const me=await getDoc(sdkDoc(fdb,'users',auth.currentUser.uid));abilitato=me.exists()&&me.data().attivo!==false;if(abilitato)chi=String(me.data().name||me.data().nome||me.data().email||'')}catch(e){}
+    if(abilitato){if(!chi)chi=auth.currentUser.email||'';return}
     await signOut(auth);msg='Questo account non è abilitato: contatta la palestra.';
   }
 }
@@ -130,7 +131,7 @@ function creaDb(){
   }};
 }
 
-window.CARMA={esci:async()=>{clearSession();await signOut(auth);location.reload()},
+window.CARMA={get chi(){return chi||(auth.currentUser&&auth.currentUser.email)||''},esci:async()=>{clearSession();await signOut(auth);location.reload()},
   /* collega Telegram in un secondo momento (tocca il pallino grigio in alto): poi si ricarica e i dati salvati senza Telegram passano da soli */
   collega:async()=>{try{const ok=await accessoTelegram();ov.remove();if(ok&&hasSession())location.reload()}catch(e){console.error(e);ov.remove()}}};
 (async()=>{
