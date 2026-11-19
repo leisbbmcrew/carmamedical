@@ -258,6 +258,7 @@ h2{font-size:22px;margin:0 0 4px}
 .avn{background:none;border:none;color:var(--text);font:inherit;font-weight:600;text-align:left;cursor:pointer;padding:6px 0;min-width:0}
 .avu .pb{flex:none;padding:8px 12px}
 /* documenti in anagrafica */
+.det dd{white-space:pre-wrap}
 .fdocs{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg)}
 .fdoc{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
 .fic{display:flex;align-items:center;gap:2px;flex-shrink:0;min-width:44px;height:40px;padding:0 8px;border-radius:10px;background:var(--brand-soft);color:var(--brand);justify-content:center}
@@ -462,14 +463,24 @@ function dropHtml(side,label){
   return '<div class="drop">'+label+'<div class="btns"><label class="pb cam">📷 Scatta foto<input type="file" accept="image/*" capture="environment" data-side="'+side+'" hidden></label>'+
    '<label class="pb">Scegli file<input type="file" accept="image/*" data-side="'+side+'" hidden></label></div><img id="pv_'+side+'" alt="Anteprima '+label.toLowerCase()+'"></div>';
 }
-function addForm(){
+function userForm(id){
+  var u=id?find(id):null; if(id&&!u)return;
   draft={front:null,back:null};
+  var fields=FIELDS.map(function(x){return '<label>'+x[1]+(x[0]==='n'||x[0]==='c'?' *':'')+'<input id="f_'+x[0]+'" type="'+(x[2]||'text')+'"></label>'}).join('')+
+   '<label>Note riservate (visibili solo a te)<textarea id="f_nt" placeholder="Compaiono nell’area note delle nuove schede; scegli tu se stamparle."></textarea></label>';
+  if(u){
+    modal('<h3>Modifica anagrafica</h3>'+fields+'<div class="status" id="sstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="bsave" data-act="msave" data-id="'+esc(u.id)+'">Salva</button></div>');
+    FIELDS.forEach(function(x){document.getElementById('f_'+x[0]).value=u[x[0]]||''});
+    document.getElementById('f_nt').value=u.nt||'';
+    return;
+  }
   modal('<h3>Nuovo utente</h3><div class="idbox"><b>Documento d’identità</b>'+
    '<div class="idrow">'+dropHtml('front','Fronte')+dropHtml('back','Retro')+'</div>'+
    '<button id="bread" data-act="read" disabled>Leggi dati dal documento</button><div class="status" id="rstat">'+sampleMsg()+'</div><details id="rawd" hidden><summary>Mostra testo letto</summary><pre id="rawt"></pre></details></div>'+
-   FIELDS.map(function(x){return '<label>'+x[1]+(x[0]==='n'||x[0]==='c'?' *':'')+'<input id="f_'+x[0]+'" type="'+(x[2]||'text')+'"></label>'}).join('')+
-   '<div class="status" id="sstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="bsave" data-act="msave">Salva</button></div>');
+   fields+
+   '<div class="status" id="sstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button id="bsavepk" data-act="msavepk">Aggiungi pacchetti</button><button class="pri" id="bsave" data-act="msave">Salva</button></div>');
 }
+function addForm(){userForm(null)}
 function shrink(file){return new Promise(function(res,rej){
   var im=new Image(),u=URL.createObjectURL(file);
   im.onload=function(){var s=Math.min(1,1600/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=Math.round(im.width*s);cv.height=Math.round(im.height*s);cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);URL.revokeObjectURL(u);cv.toBlob(function(b){b?res(b):rej()},'image/jpeg',0.85)};
@@ -619,20 +630,37 @@ async function readDoc(){
   }catch(e){ st('rstat',e&&e.message==='net'?'Impossibile scaricare il modello di lettura: serve una connessione internet.':'Lettura non riuscita: compila i campi a mano.') }
   b.disabled=false;
 }
-async function saveUser(){
+async function saveUser(go,editId){
   var o={}; FIELDS.forEach(function(x){o[x[0]]=document.getElementById('f_'+x[0]).value.trim()});
   if(!o.n||!o.c){document.getElementById(o.n?'f_c':'f_n').focus();return}
   o.cf=o.cf.toUpperCase();
+  o.nt=document.getElementById('f_nt').value.trim();
+  var bs=document.getElementById('bsave'),bp=document.getElementById('bsavepk');
+  function lock(on){if(bs){bs.disabled=on;bs.textContent=on&&!go?'Salvataggio…':'Salva'}if(bp){bp.disabled=on;bp.textContent=on&&go?'Salvataggio…':'Aggiungi pacchetti'}}
+  if(editId){
+    var eu=find(editId); if(!eu)return;
+    lock(true);
+    try{
+      if(dbCol){await dbCol.doc(String(eu.id)).update(o)}
+      Object.keys(o).forEach(function(k){eu[k]=o[k]});
+      if(cur==='utenti'&&document.getElementById('ulist'))listUtenti();
+      closeModal();openUser(eu.id);
+    }catch(e){lock(false);st('sstat','Salvataggio non riuscito. Riprova.')}
+    return;
+  }
   var has=draft.front||draft.back;
   if(has&&dbCol&&!caps.assets){st('sstat','Archivio documenti non disponibile per questo profilo: rimuovi le foto per salvare.');return}
-  var b=document.getElementById('bsave'); b.disabled=true; b.textContent='Salvataggio…';
+  lock(true);
   try{
     for(var side of ['front','back']){ if(!draft[side])continue;
       if(caps.assets){var a=await caps.assets.upload(draft[side]);o[side+'Id']=a.id}
       else{o[side+'Blob']=draft[side]} }
-    if(dbCol){await dbCol.add(o)} else {o.id='l'+(++uid);U.unshift(o);listUtenti()}
+    var nid;
+    if(dbCol){var r=await dbCol.add(o);nid=r&&r.id;if(nid&&!find(nid)){o.id=String(nid);U.unshift(o)}}
+    else {o.id='l'+(++uid);nid=o.id;U.unshift(o);listUtenti()}
     closeModal();
-  }catch(e){b.disabled=false;b.textContent='Salva';st('sstat','Salvataggio non riuscito. Riprova.')}
+    if(go&&nid){goIng(nid);pkForm(null)}
+  }catch(e){lock(false);st('sstat','Salvataggio non riuscito. Riprova.')}
 }
 function find(id){return U.filter(function(u){return String(u.id)===String(id)})[0]}
 async function dl(id,side){
@@ -665,7 +693,8 @@ document.addEventListener('click',function(e){
     if(k==='add')addForm();
     else if(k==='mclose')closeModal();
     else if(k==='read')readDoc();
-    else if(k==='msave')saveUser();
+    else if(k==='msave')saveUser(false,a.getAttribute('data-id')||null);
+    else if(k==='msavepk')saveUser(true,null);
     else if(k==='dl')dl(a.getAttribute('data-id'),a.getAttribute('data-side'));
     else if(k==='del'){dm=!dm;sel={};listUtenti()}
     else if(k==='cancel'){dm=false;sel={};listUtenti()}
@@ -778,10 +807,13 @@ function exLabel(e){return (e.g?'<i class="dc">SS '+String.fromCharCode(64+(+e.g
 function schedaForm(){
   var names=EXLIST.slice();Object.keys(exNames(suid)).forEach(function(k){var n=exNames(suid)[k];if(EXLIST.map(ekey).indexOf(k)<0)names.push(n)});
   modal('<h3>Nuova scheda</h3><label>Nome scheda *<input id="sc_n" type="text" placeholder="es. Forza, mese 1"></label><label>Data<input id="sc_d" type="date" value="'+new Date().toISOString().slice(0,10)+'"></label><label>Note<input id="sc_note" type="text"></label>'+
+   '<label>Note riservate (solo tue, non stampate se non lo scegli)<textarea id="sc_priv" style="min-height:64px"></textarea></label><label style="flex-direction:row;align-items:center;gap:8px;font-size:14px;color:var(--text)"><input type="checkbox" id="sc_pp"> Stampa le note riservate nella scheda</label>'+
+   '<label>Comunicazioni (vengono stampate nella scheda)<textarea id="sc_com" style="min-height:64px" placeholder="es. avvisi, orari, indicazioni per il cliente"></textarea></label>'+
    '<b style="font-size:14px">Esercizi</b><div class="status">Tocca SS per mettere un esercizio in superserie con quello sopra (puoi collegarne più di due).</div><div id="exs" style="display:flex;flex-direction:column;gap:6px">'+exRow()+exRow()+exRow()+'</div><button class="addx" data-act="addex">+ Aggiungi esercizio</button>'+
    '<datalist id="exlist">'+names.map(function(n){return '<option value="'+esc(n)+'">'}).join('')+'</datalist>'+
    '<div class="status" id="scstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="scsave" data-act="smsave">Salva</button></div>');
   document.querySelector('#modal .mbox').classList.add('wide');refreshEx();
+  var su=find(suid);if(su&&su.nt)document.getElementById('sc_priv').value=su.nt;
 }
 function num(v){return v===''||v==null||isNaN(+v)?'':+v}
 async function saveScheda(){
@@ -790,7 +822,7 @@ async function saveScheda(){
   var es=[].map.call(document.querySelectorAll('#exs .exr'),function(r){return {n:r.querySelector('.ex_n').value.trim(),s:num(r.querySelector('.ex_s').value),r:num(r.querySelector('.ex_r').value),k:num(r.querySelector('.ex_k').value),lk:r.classList.contains('lk')}}).filter(function(x){return x.n});
   var gn=0;es.forEach(function(x,i){if(x.lk&&i>0){if(!es[i-1].g)es[i-1].g=++gn;x.g=es[i-1].g}});es.forEach(function(x){delete x.lk});
   if(!es.length){st('scstat','Aggiungi almeno un esercizio.');return}
-  var o={uid:String(suid),nome:nome,data:document.getElementById('sc_d').value||new Date().toISOString().slice(0,10),note:document.getElementById('sc_note').value.trim(),es:es,ts:Date.now()};
+  var o={uid:String(suid),nome:nome,data:document.getElementById('sc_d').value||new Date().toISOString().slice(0,10),note:document.getElementById('sc_note').value.trim(),priv:document.getElementById('sc_priv').value.trim(),pp:document.getElementById('sc_pp').checked,com:document.getElementById('sc_com').value.trim(),es:es,ts:Date.now()};
   var b=document.getElementById('scsave');b.disabled=true;b.textContent='Salvataggio…';
   try{ if(dbSch)await dbSch.add(o); else{o.id='l'+(++uid);SCH.unshift(o)} closeModal();listSchede();drawTrend() }
   catch(e){b.disabled=false;b.textContent='Salva';st('scstat','Salvataggio non riuscito. Riprova.')}
@@ -798,12 +830,12 @@ async function saveScheda(){
 function viewScheda(id){
   var sc=findS(id);if(!sc)return;var u=find(sc.uid);
   modal('<h3>'+esc(sc.nome)+'</h3><div class="status">'+(u?esc(u.n+' '+u.c)+' · ':'')+fdate(sc.data)+'</div>'+
-   '<table class="stab"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Kg</th></tr></thead><tbody>'+sc.es.map(function(e){return '<tr><td>'+exLabel(e)+'</td><td>'+esc(e.s)+'</td><td>'+esc(e.r)+'</td><td>'+esc(fnum(e.k))+'</td></tr>'}).join('')+'</tbody></table>'+(sc.note?'<p class="status">'+esc(sc.note)+'</p>':'')+
+   '<table class="stab"><thead><tr><th>Esercizio</th><th>Serie</th><th>Rip.</th><th>Kg</th></tr></thead><tbody>'+sc.es.map(function(e){return '<tr><td>'+exLabel(e)+'</td><td>'+esc(e.s)+'</td><td>'+esc(e.r)+'</td><td>'+esc(fnum(e.k))+'</td></tr>'}).join('')+'</tbody></table>'+(sc.note?'<p class="status">'+esc(sc.note)+'</p>':'')+(sc.com?'<p class="status"><b>Comunicazioni</b><br>'+esc(sc.com).replace(/\n/g,'<br>')+'</p>':'')+(sc.priv?'<p class="status"><b>Note riservate</b> ('+(sc.pp?'stampate':'non stampate')+')<br>'+esc(sc.priv).replace(/\n/g,'<br>')+'</p>':'')+
    '<div class="status" id="sdstat"></div><div class="mrow"><button data-act="mclose">Chiudi</button><button class="pri" data-act="sdl" data-id="'+esc(sc.id)+'">Scarica</button></div>');
 }
 function schedaHtml(u,sc){
   return '<!doctype html><html lang="it"><head><meta charset="utf-8"><title>'+esc(sc.nome)+'</title><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 16px;color:#12302b}h1{margin:4px 0}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #cfdcd9;padding:8px 10px;text-align:left}th{background:#eaf4f2}.m{color:#5d7872;margin:0}.dc{font-style:normal;font-size:11px;font-weight:600;color:#0f766e;background:#d9f0ec;border-radius:99px;padding:1px 8px;margin-right:4px}</style></head><body><p class="m">Carma Medical Wellness</p><h1>'+esc(sc.nome)+'</h1><p class="m">'+esc(u?u.n+' '+u.c:'')+' · '+fdate(sc.data)+'</p><table><thead><tr><th>Esercizio</th><th>Serie</th><th>Ripetizioni</th><th>Carico (kg)</th></tr></thead><tbody>'+
-   sc.es.map(function(e){return '<tr><td>'+exLabel(e)+'</td><td>'+esc(e.s)+'</td><td>'+esc(e.r)+'</td><td>'+esc(fnum(e.k))+'</td></tr>'}).join('')+'</tbody></table>'+(sc.note?'<p>'+esc(sc.note)+'</p>':'')+'</body></html>';
+   sc.es.map(function(e){return '<tr><td>'+exLabel(e)+'</td><td>'+esc(e.s)+'</td><td>'+esc(e.r)+'</td><td>'+esc(fnum(e.k))+'</td></tr>'}).join('')+'</tbody></table>'+(sc.note?'<p>'+esc(sc.note)+'</p>':'')+(sc.pp&&sc.priv?'<h3>Note</h3><p>'+esc(sc.priv).replace(/\n/g,'<br>')+'</p>':'')+(sc.com?'<h3>Comunicazioni</h3><p>'+esc(sc.com).replace(/\n/g,'<br>')+'</p>':'')+'</body></html>';
 }
 async function saveBlob(blob,name){
   try{
@@ -1246,7 +1278,7 @@ function renderAvvisi(){
   }).join(''):'<div class="empty">Nessun avviso: nessun pacchetto in esaurimento.</div>';
   if(N.length)h+='<h3 class="ih">Non rinnovano</h3>'+N.map(function(u){
     var np=pacOf(u.id).length;
-    return '<div class="urow" style="align-items:center"><div class="av">'+esc((u.n[0]||'')+(u.c[0]||'')).toUpperCase()+'</div><div class="cells two"><b>'+esc(uname(u))+'</b><span>'+(np?restUser(u.id)+' ingressi rimasti':'Nessun pacchetto')+' · si riattiva con un nuovo pacchetto</span></div><button class="pb" style="flex:none" data-act="nr_set" data-id="'+esc(u.id)+'" data-v="0">Riattiva</button></div>';
+    return '<div class="urow" style="align-items:center"><div class="av">'+esc((u.n[0]||'')+(u.c[0]||'')).toUpperCase()+'</div><div class="cells two"><b><button class="avn" data-alu="'+esc(u.id)+'">'+esc(uname(u))+'</button></b><span>'+(np?restUser(u.id)+' ingressi rimasti':'Nessun pacchetto')+' · si riattiva con un nuovo pacchetto</span></div><button class="pb" style="flex:none" data-act="nr_set" data-id="'+esc(u.id)+'" data-v="0">Riattiva</button></div>';
   }).join('');
   document.getElementById('main').innerHTML=h;
   updBadge();
@@ -1421,6 +1453,7 @@ document.addEventListener('click',function(e){
   var a=e.target.closest('[data-act]');
   if(a){var k=a.getAttribute('data-act'),id=a.getAttribute('data-id');
     if(k==='um_ana')openUser(id);
+    else if(k==='um_edit')userForm(id);
     else if(k==='um_sch')goSchede(id);
     else if(k==='um_ing')goIng(id);
     else if(k==='ing_back'){iuid=null;idm=false;isel={};renderUtenti()}
@@ -1465,7 +1498,7 @@ function hasDk(u,k){return !!(u[k+'Id']||u[k+'Blob'])}
 function typeLabel(u,k){var t=u[k+'Blob']?u[k+'Blob'].type:u[k+'Type'];return t==='application/pdf'?'PDF':'immagine'}
 function openUser(id){
   var u=find(id);if(!u)return;
-  var rows=[['Nome',u.n+' '+u.c],['Data di nascita',fdate(u.d)],['Codice fiscale',u.cf],['Telefono',u.t],['Email',u.e],['Città',u.ci],['N. documento',u.dn],['Scadenza documento',fdate(u.ds)]];
+  var rows=[['Nome',u.n+' '+u.c],['Data di nascita',fdate(u.d)],['Codice fiscale',u.cf],['Telefono',u.t],['Email',u.e],['Città',u.ci],['N. documento',u.dn],['Scadenza documento',fdate(u.ds)],['Note riservate',u.nt]];
   var i=esc(u.id);
   modal('<h3>'+esc(u.n+' '+u.c)+'</h3><dl class="det">'+rows.map(function(r){return '<dt>'+r[0]+'</dt><dd>'+esc(r[1]||'—')+'</dd>'}).join('')+'</dl>'+
    '<div class="fdocs"><b>Documenti</b>'+DK.map(function(d){
@@ -1474,7 +1507,7 @@ function openUser(id){
       (has?'<button class="ib" data-act="doc_open" data-id="'+i+'" data-k="'+d[0]+'" aria-label="Apri '+d[2]+'" title="Apri">'+IC.eye+'</button><button class="ib" data-act="doc_dl" data-id="'+i+'" data-k="'+d[0]+'" aria-label="Scarica '+d[2]+'" title="Scarica">'+IC.down+'</button>':'')+
       '<label class="ib up" title="'+(has?'Sostituisci':'Carica')+'" aria-label="'+(has?'Sostituisci ':'Carica ')+d[2]+'">'+IC.up+'<input type="file" accept="image/*,application/pdf" data-up="'+d[0]+'" data-uid="'+i+'" hidden></label></div></div>';
    }).join('')+'<div class="status" id="dstat">Puoi caricare una foto o un PDF.</div></div>'+
-   '<div class="mrow"><button data-act="mclose">Chiudi</button></div>');
+   '<div class="mrow"><button data-act="mclose">Chiudi</button><button class="pri" data-act="um_edit" data-id="'+i+'">Modifica</button></div>');
 }
 async function docBlob(u,k){
   var b=u[k+'Blob'];
