@@ -22,13 +22,15 @@ const ov=document.createElement('div'),card=document.createElement('div');
 ov.style.cssText=S.ov;card.style.cssText=S.card;ov.appendChild(card);
 const el=(t,txt,css)=>{const e=document.createElement(t);e.textContent=txt;if(css)e.style.cssText=css;return e};
 let infoEl=null;
-const setInfo=t=>{if(infoEl)infoEl.textContent=t};
+let nota='';
+const setInfo=t=>{nota=t;if(infoEl)infoEl.textContent=t};
 function ask(title,msg,fields,sms){
   if(!ov.isConnected)document.body.appendChild(ov);
   card.textContent='';
   card.append(el('h2',title,'margin:0 0 8px;font-size:20px'),el('p',msg,'margin:0 0 16px;font-size:14px;opacity:.8;line-height:1.4'));
   const inputs=fields.map(f=>{const i=document.createElement('input');i.type=f.type||'text';i.placeholder=f.ph;i.autocomplete=f.ac||'off';i.style.cssText=S.inp;card.appendChild(i);return i});
   infoEl=el('div','','color:#ffb4a8;font-size:13px;min-height:18px;margin:2px 0 8px');
+  infoEl.textContent=nota;nota='';
   const ok=el('button','Continua',S.btn);card.append(infoEl,ok);
   return new Promise(res=>{
     const go=()=>{const v=inputs.map(i=>i.value);if(!v[0]){setInfo('Compila il campo.');return}res(v)};
@@ -87,11 +89,12 @@ async function accessoTelegram(){
     try{
       righe.length=0;stato('Carico la libreria Telegram…');
       const tg=await loadTg(stato);
+      const reg=t=>{stato(t);if(/non valido|non riuscito|reinviato|Reinvio/i.test(t))nota=t};
       stato('Connessione a Telegram…');
       client=newClient(tg,'');
       await withTimeout(client.connect(),30000,'TIMEOUT_CONNECT');
       stato('Connesso.');
-      await tgLogin(tg,client,ui,stato);
+      await tgLogin(tg,client,ui,reg);
       try{await client.disconnect()}catch(e){}
       return;
     }catch(e){

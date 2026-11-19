@@ -25,6 +25,14 @@
   <input id="ph" type="tel" placeholder="+39…">
   <button id="send">Invia codice di prova</button>
 </div>
+<div id="cod" hidden>
+  <div id="tel2" style="margin:0 0 16px;padding:14px;background:#17212c;border-radius:12px">
+    <p><b>Completa l’accesso</b>: scrivi il codice ricevuto (nell’app Telegram o via SMS) e premi Conferma. Se serve, usa Reinvia.</p>
+    <input id="code" placeholder="Codice" autocomplete="one-time-code">
+    <input id="pw" type="password" placeholder="Password a due fattori" hidden>
+    <div><button id="conf">Conferma codice</button><button id="sms">Reinvia via SMS</button></div>
+  </div>
+</div>
 <button id="copy">Copia il report</button>
 
 <script type="module">
@@ -109,21 +117,69 @@ const ok8=ok7&&await step('Connessione del client a Telegram',async()=>{
 });
 if(ok8){document.getElementById('tel').hidden=false;row('Tutti i controlli superati').ok('puoi provare l’invio del codice qui sotto')}
 
+let cli=null,sent=null,phoneNum='',creds=null;
+const errTxt=e=>{const m=(e&&(e.errorMessage||e.message))||String(e);return tgm.tgErrText(e)+(tgm.tgErrText(e)===m?'':' ['+m+']')};
 document.getElementById('send').onclick=async()=>{
   const phone=document.getElementById('ph').value.trim();   /* inviato come scritto */
   if(!/^\+\d{8,15}$/.test(phone.replace(/[\s\-()]/g,''))){row('Numero').ko('scrivi il numero con il prefisso internazionale, es. +39…');return}
   const btn=document.getElementById('send');btn.disabled=true;
-  await step('Invio codice a '+phone.slice(0,4)+'…'+phone.slice(-2),async()=>{
-    const c=tgm.newClient(tg,'');
+  phoneNum=phone;creds={apiId:Number(String(cfg.TG_API_ID).trim()),apiHash:String(cfg.TG_API_HASH).trim()};
+  const done=await step('Invio codice a '+phone.replace(/\s/g,'').slice(0,4)+'…'+phone.slice(-2),async()=>{
     try{
-      await T(c.connect(),30000,'connessione non riuscita');
-      const sent=await T(c.sendCode({apiId:Number(String(cfg.TG_API_ID).trim()),apiHash:String(cfg.TG_API_HASH).trim()},phone,false),40000,'Telegram non risponde alla richiesta del codice');
+      if(cli){try{await cli.disconnect()}catch(e){}}
+      cli=tgm.newClient(tg,'');
+      await T(cli.connect(),30000,'connessione non riuscita');
+      sent=await T(cli.sendCode(creds,phone,false),40000,'Telegram non risponde alla richiesta del codice');
       return 'richiesta accettata: il codice arriva '+(sent.isCodeViaApp?'nell’app Telegram (chat “Telegram”), non via SMS':'via SMS o chiamata');
-    }catch(e){
-      throw new Error(tgm.tgErrText(e)+' ['+((e&&(e.errorMessage||e.message))||e)+']');
-    }finally{try{await c.disconnect()}catch(e){}}
+    }catch(e){try{if(cli)await cli.disconnect()}catch(_){}cli=null;throw new Error(errTxt(e))}
   });
   btn.disabled=false;
+  if(done)document.getElementById('cod').hidden=false;
+};
+document.getElementById('sms').onclick=async()=>{
+  if(!cli||!sent)return;
+  await step('Reinvio del codice (SMS o chiamata)',async()=>{
+    try{
+      const r=await T(cli.invoke(new tg.Api.auth.ResendCode({phoneNumber:phoneNum,phoneCodeHash:sent.phoneCodeHash})),40000,'Telegram non risponde');
+      if(r&&r.phoneCodeHash)sent.phoneCodeHash=r.phoneCodeHash;
+      const t=(r&&r.type&&r.type.className)||'sconosciuto';
+      return 'richiesta accettata, tipo: '+t+(/Sms/.test(t)?' (SMS)':/Call/.test(t)?' (chiamata)':/App/.test(t)?' (ancora nell’app Telegram)':'');
+    }catch(e){throw new Error(errTxt(e))}
+  });
+};
+document.getElementById('conf').onclick=async()=>{
+  if(!cli||!sent)return;
+  const code=document.getElementById('code').value.trim(),pwEl=document.getElementById('pw');
+  if(!code&&pwEl.hidden){row('Codice').ko('scrivi il codice');return}
+  const ok=await step('Accesso con il codice',async()=>{
+    if(pwEl.hidden){
+      try{
+        await T(cli.invoke(new tg.Api.auth.SignIn({phoneNumber:phoneNum,phoneCodeHash:sent.phoneCodeHash,phoneCode:code})),40000,'Telegram non risponde');
+      }catch(e){
+        const m=(e&&(e.errorMessage||e.message))||'';
+        if(/SESSION_PASSWORD_NEEDED/.test(m)){pwEl.hidden=false;pwEl.focus();throw new Error('serve la password a due fattori: scrivila nel campo qui sopra e premi di nuovo Conferma')}
+        throw new Error(errTxt(e));
+      }
+    }else{
+      const pw=pwEl.value;if(!pw)throw new Error('scrivi la password a due fattori');
+      let last=null;
+      try{await T(cli.signInWithPassword(creds,{password:async()=>pw,onError:async er=>{last=er;return true}}),60000,'Telegram non risponde')}
+      catch(e){throw new Error(errTxt(last||e))}
+    }
+    localStorage.setItem('tg_session',cli.session.save());
+    const me=await T(cli.getMe(),30000);
+    return 'accesso riuscito come '+((me&&me.firstName)||'account')+' · sessione salvata in questo browser: l’app ora entra senza chiedere il codice';
+  });
+  if(!ok)return;
+  document.getElementById('cod').hidden=true;
+  await step('Gruppo "'+cfg.TG_GROUP+'"',async()=>{
+    const {dialog,titles}=await T(tgm.findDialog(cli,cfg.TG_GROUP),40000);
+    if(!dialog)throw new Error('gruppo non trovato tra le chat di questo account ('+titles.length+' chat visibili): il nome deve essere identico e l’account deve farne parte');
+    const e=dialog.entity;
+    return 'trovato · argomenti attivi: '+(e.forum?'sì':'no (attivali nelle impostazioni del gruppo)')+' · amministratore: '+((e.creator||e.adminRights)?'sì':'no (serve per creare gli argomenti)');
+  });
+  try{await cli.disconnect()}catch(e){}
+  cli=null;
 };
 document.getElementById('copy').onclick=async e=>{
   const t='Diagnosi Carma Telegram\n'+report.join('\n')+'\n--- console ---\n'+((tgm&&tgm.consoleLog)||[]).slice(-12).join('\n');
