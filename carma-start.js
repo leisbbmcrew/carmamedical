@@ -24,7 +24,7 @@ const el=(t,txt,css)=>{const e=document.createElement(t);e.textContent=txt;if(cs
 let infoEl=null;
 let nota='';
 const setInfo=t=>{nota=t;if(infoEl)infoEl.textContent=t};
-function ask(title,msg,fields,sms){
+function ask(title,msg,fields,sms,skip){
   if(!ov.isConnected)document.body.appendChild(ov);
   card.textContent='';
   card.append(el('h2',title,'margin:0 0 8px;font-size:20px'),el('p',msg,'margin:0 0 16px;font-size:14px;opacity:.8;line-height:1.4'));
@@ -36,12 +36,15 @@ function ask(title,msg,fields,sms){
     const go=()=>{const v=inputs.map(i=>i.value);if(!v[0]){setInfo('Compila il campo.');return}res(v)};
     ok.onclick=go;inputs.forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter')go()}));
     if(sms){const b=el('button','Non arriva? Invia via SMS',S.link);b.onclick=()=>res('__SMS__');card.appendChild(b)}
+    if(skip){const b=el('button','Continua senza Telegram',S.link);b.onclick=()=>res('__SKIP__');card.appendChild(b)}
     inputs[0].focus();
   });
 }
 
 /* Schermata di attesa con le ultime operazioni (così si vede se la richiesta parte davvero) */
 const righe=[];
+let skipRes=null;
+const skipP=()=>new Promise(r=>{skipRes=()=>r('__SKIP__')});
 function stato(t){
   righe.push(t);if(righe.length>6)righe.shift();
   if(!ov.isConnected)document.body.appendChild(ov);
@@ -49,14 +52,15 @@ function stato(t){
   card.append(el('h2','Collegamento a Telegram','margin:0 0 8px;font-size:20px'),
     el('p','Attendi, non chiudere la pagina.','margin:0 0 12px;font-size:14px;opacity:.8'),
     el('pre',righe.join('\n'),'font-size:12px;white-space:pre-wrap;opacity:.75;margin:0'));
+  const k=el('button','Continua senza Telegram',S.link);k.onclick=()=>{if(skipRes)skipRes()};card.appendChild(k);
 }
-function avviso(title,msg,dett,btn){
+function avviso(title,msg,dett,btn,skip){
   if(!ov.isConnected)document.body.appendChild(ov);
   card.textContent='';
   card.append(el('h2',title,'margin:0 0 8px;font-size:20px'),el('p',msg,'margin:0 0 12px;font-size:14px;line-height:1.4'));
   if(dett)card.appendChild(el('pre',dett,'font-size:11px;white-space:pre-wrap;opacity:.7;margin:0 0 14px;max-height:160px;overflow:auto'));
   const b=el('button',btn||'Riprova',S.btn);card.appendChild(b);
-  return new Promise(res=>{b.onclick=()=>res()});
+  return new Promise(res=>{b.onclick=()=>res('retry');if(skip){const k=el('button','Continua senza Telegram',S.link);k.onclick=()=>res('skip');card.appendChild(k)}});
 }
 
 /* ---- accesso Firebase: solo account abilitati (documento users/<uid>) ---- */
@@ -76,11 +80,14 @@ async function accessoFirebase(){
 }
 
 /* ---- accesso Telegram (una volta per dispositivo; la sessione resta nel browser) ---- */
+const SKIP=new Error('SKIP');
+/* restituisce true se la sessione Telegram è attiva, false se si prosegue senza */
 async function accessoTelegram(){
-  if(!tgConfigured()||hasSession())return;
+  if(!tgConfigured())return false;
+  if(hasSession())return true;
   const ui={
-    phone:async()=>(await ask('Collega Telegram','Inserisci il numero, con prefisso (es. +39…), dell’account Telegram che fa parte del gruppo dati.',[{type:'tel',ph:'+39…',ac:'tel'}]))[0],
-    code:async()=>{const r=await ask('Codice Telegram','Il codice arriva nell’app Telegram (chat “Telegram”) se l’account è già aperto su un altro dispositivo, altrimenti via SMS.',[{ph:'Codice',ac:'one-time-code'}],true);return r==='__SMS__'?r:r[0].trim()},
+    phone:async()=>{const r=await ask('Collega Telegram','Inserisci il numero, con prefisso (es. +39…), dell’account Telegram che fa parte del gruppo dati. Se hai fretta puoi continuare senza: i dati nuovi restano al sicuro su Firebase e passano a Telegram al collegamento successivo.',[{type:'tel',ph:'+39…',ac:'tel'}],false,true);if(r==='__SKIP__')throw SKIP;return r[0]},
+    code:async()=>{const r=await ask('Codice Telegram','Il codice arriva nell’app Telegram (chat “Telegram”) se l’account è già aperto su un altro dispositivo, altrimenti via SMS.',[{ph:'Codice',ac:'one-time-code'}],true,true);if(r==='__SKIP__')throw SKIP;return r==='__SMS__'?r:r[0].trim()},
     password:async()=>(await ask('Password Telegram','Inserisci la password a due fattori di Telegram.',[{type:'password',ph:'Password'}]))[0],
     info:setInfo
   };
@@ -88,20 +95,24 @@ async function accessoTelegram(){
     let client=null;
     try{
       righe.length=0;stato('Carico la libreria Telegram…');
-      const tg=await loadTg(stato);
+      const sp=skipP(),lp=loadTg(stato);lp.catch(()=>{});
+      const tg=await Promise.race([lp,sp]);if(tg==='__SKIP__')throw SKIP;
       const reg=t=>{stato(t);if(/non valido|non riuscito|reinviato|Reinvio/i.test(t))nota=t};
       stato('Connessione a Telegram…');
       client=newClient(tg,'');
-      await withTimeout(client.connect(),30000,'TIMEOUT_CONNECT');
+      const cp=withTimeout(client.connect(),30000,'TIMEOUT_CONNECT');cp.catch(()=>{});
+      if(await Promise.race([cp.then(()=>'ok'),sp])==='__SKIP__')throw SKIP;
       stato('Connesso.');
       await tgLogin(tg,client,ui,reg);
       try{await client.disconnect()}catch(e){}
-      return;
+      return true;
     }catch(e){
       try{if(client)await client.disconnect()}catch(_){}
+      if(e===SKIP){clearSession();return false}
       clearSession();
       const dett=[shimError&&('Buffer: '+shimError),libSource&&('Libreria: '+libSource),...(e&&e.details||[]),...consoleLog.slice(-5)].filter(Boolean).join('\n');
-      await avviso('Telegram non collegato',tgErrText(e),dett,'Riprova');
+      const sc=await avviso('Telegram non collegato',tgErrText(e),dett,'Riprova',true);
+      if(sc==='skip')return false;
     }
   }
 }
@@ -119,7 +130,9 @@ function creaDb(){
   }};
 }
 
-window.CARMA={esci:async()=>{clearSession();await signOut(auth);location.reload()}};
+window.CARMA={esci:async()=>{clearSession();await signOut(auth);location.reload()},
+  /* collega Telegram in un secondo momento (tocca il pallino grigio in alto): poi si ricarica e i dati salvati senza Telegram passano da soli */
+  collega:async()=>{try{const ok=await accessoTelegram();ov.remove();if(ok&&hasSession())location.reload()}catch(e){console.error(e);ov.remove()}}};
 (async()=>{
   try{
     await accessoFirebase();

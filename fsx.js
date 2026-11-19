@@ -57,7 +57,7 @@ const cleanSet=d=>{const o={};for(const k in d){const v=d[k];if(v&&(v.$del||v.$u
 /* ---------- messaggi e avvisi ---------- */
 let warnEl=null;
 /* ---------- LED di stato nella barra in alto: verde = sincronizzato, giallo = in corso, rosso = problema, grigio = Telegram non collegato ---------- */
-const LED={ok:['#2E9E5B','Sincronizzato con Telegram'],busy:['#E0A800','Sincronizzazione in corso…'],err:['#D93025','Problema di sincronizzazione'],off:['#8A94A6','Telegram non collegato']};
+const LED={ok:['#2E9E5B','Sincronizzato con Telegram'],busy:['#E0A800','Sincronizzazione in corso…'],err:['#D93025','Problema di sincronizzazione'],off:['#8A94A6','Telegram non collegato: i dati nuovi restano su Firebase e passano a Telegram al collegamento. Tocca per collegare.']};
 let ledEl=null,ledSt='ok',ledMsg='',busyN=0,lastErr='',ledObs=null;
 function ledPlace(){
   if(!ledEl)return;const t=document.querySelector('.top');
@@ -71,6 +71,7 @@ function ledInit(){
   ledEl=document.createElement('button');ledEl.type='button';ledEl.className='pfm-led';ledEl.innerHTML='<i></i>';
   ledEl.onclick=()=>{
     const t=ledMsg||LED[ledSt][1];
+    if(ledSt==='off'&&window.CARMA&&window.CARMA.collega){window.CARMA.collega();return}
     if(ledSt==='err'){avviso(t+' Riprovo ora…');sync(false).then(()=>avviso('Sincronizzato.')).catch(()=>{})}
     else avviso(t)};
   ledPlace();ledShow();
@@ -83,7 +84,7 @@ function ledShow(){
 function ledSet(st,msg){ledSt=st;ledMsg=msg||'';ledInit();ledShow()}
 /* stato calcolato: errore > lavoro in corso > ok */
 function ledCalc(){
-  if(!hasSession()){ledSet('off','Telegram non collegato: accedi dalla Chat.');return}
+  if(!hasSession()){ledSet('off','');return}
   if(lastErr)ledSet('err',lastErr+' Tocca per riprovare.');
   else if(busyN>0)ledSet('busy','');else ledSet('ok','')}
 const busyIn=()=>{busyN++;ledCalc()},busyOut=()=>{busyN=Math.max(0,busyN-1);ledCalc()};
@@ -105,6 +106,9 @@ let auto=true;
 export const setAutoSync=v=>{auto=!!v};
 let C={v:1,lastId:0,full:0,recs:{}},loaded=false,firstDone=false,startP=null,syncP=null,timer=null;
 const subs=new Set();
+/* modalità senza Telegram: sessione assente (o Telegram non raggiungibile): si lavora su Firebase e ogni modifica resta "in sospeso" (campo _pend) finché non passa a Telegram */
+let tgDown=false;
+const offline=()=>tgConfigured()&&(!hasSession()||tgDown);
 const recOf=(sec,id)=>(C.recs[sec]||{})[id];
 function apply(sec,rid,mid,o,d,enc){
   const S=C.recs[sec]||(C.recs[sec]={});let r=S[rid];
@@ -182,7 +186,30 @@ function startOnce(){
     catch(e){console.error(e);if(!firstDone){startP=null;throw e}avviso('Telegram non raggiungibile: vedi i dati dell’ultima sincronizzazione ('+tgErrText(e)+').')}
     if(!timer)timer=setInterval(()=>{if(auto&&document.visibilityState==='visible'&&subs.size)sync(false).catch(e=>console.error(e))},20000);
   })();
+  startP.then(()=>{if(hasSession()&&!tgDown)migraInSospeso().catch(()=>{})},()=>{});
   return startP}
+/* ---------- trasferimento automatico: ciò che è stato salvato senza Telegram passa sul registro appena c'è la sessione ---------- */
+const SEZ_MIGRA=['utenti','schede','calendario','ingressi','pacchetti','eventi'];
+let migrando=null;
+export function migraInSospeso(){
+  if(migrando)return migrando;
+  migrando=(async()=>{
+    if(!tgConfigured()||!hasSession()||tgDown)return 0;
+    await startOnce();
+    let n=0;
+    for(const sec of SEZ_MIGRA){
+      let sn;try{sn=await SDK.getDocs(SDK.collection(DB,'sections',sec,'items'))}catch(e){continue}
+      for(const d of sn.docs){
+        const x=d.data()||{},p=x._pend;if(!p)continue;
+        const y={...x};delete y._pend;
+        const ref=tgRef(DB,sec,'items',d.id),r=recOf(sec,d.id),esiste=!!r&&!r.x;
+        if(p==='del'){if(esiste)await deleteDoc(ref)}
+        else if(p==='upd'&&esiste)await write(ref,'upd',ser(y),true);
+        else await write(ref,'set',ser(y),true);
+        await SDK.deleteDoc(d.ref);n++}}
+    if(n)avviso('Telegram collegato: '+n+(n===1?' elemento salvato':' elementi salvati')+' senza Telegram '+(n===1?'è stato trasferito':'sono stati trasferiti')+' nell’archivio.');
+    return n})().catch(e=>{migrando=null;console.warn('Trasferimento non completato:',e&&e.message);throw e});
+  return migrando}
 export const caricaDati=startOnce;
 /* ricarica subito i dati da Telegram (usata quando cambia una stella) */
 export const syncNow=()=>startOnce().then(()=>sync(false));
@@ -209,16 +236,39 @@ function snapOf(ref){
 export function onSnapshot(ref,cb,err){
   if(!ref||!ref.__tg)return SDK.onSnapshot(ref,cb,err);
   let un=null,dead=false;
-  const toSdk_=(e,msg)=>{if(un||dead)return;
+  let started=false;
+  const toSdk_=(e,msg)=>{if(un||dead||started)return;started=true;
     if(msg)avviso(msg[0],msg[1]);
-    un=SDK.onSnapshot(sdkRef(ref),cb,err)};
+    if(ref.id){un=SDK.onSnapshot(sdkRef(ref),cb,err);return}
+    /* elenco: ultimo stato noto di Telegram (cache di questo dispositivo) + ciò che è in sospeso su Firebase */
+    kvGet('cache:'+GRUPPO_DATI).then(saved=>{
+      if(dead)return;
+      if(saved&&saved.v===1&&saved.recs&&!(C.lastId>0))C=saved;
+      un=SDK.onSnapshot(sdkRef(ref),s=>cb(offSnap(ref,s)),err)})};
   const sub={fire(){if(un||dead||!ready())return;const s=snapOf(ref);if(!ref.id)s.size=s.docs.length;cb(s)}};
-  if(!hasSession()){ledCalc();toSdk_(null,['Telegram non collegato: vedi solo i contenuti salvati anche su Firebase. Per vedere e modificare tutto accedi a Telegram.',['Accedi','chat.html']])}
+  if(!hasSession()){ledCalc();toSdk_(null,['Telegram non collegato: vedi l’ultimo archivio sincronizzato su questo dispositivo più quanto salvi ora. I dati nuovi passeranno a Telegram al collegamento.'])}
   else{
     subs.add(sub);
-    startOnce().then(()=>sub.fire(),e=>{subs.delete(sub);toSdk_(e,['Telegram non raggiungibile ('+tgErrText(e)+'): vedi solo i contenuti salvati anche su Firebase.',['Chat','chat.html']])});
+    startOnce().then(()=>sub.fire(),e=>{subs.delete(sub);tgDown=true;toSdk_(e,['Telegram non raggiungibile ('+tgErrText(e)+'): lavori su Firebase, i dati nuovi passeranno a Telegram al prossimo collegamento.'])});
     if(ready())sub.fire()}
   return ()=>{dead=true;subs.delete(sub);if(un)un()}}
+/* lettura senza Telegram: cache + sospesi (_pend: set = nuovo, upd = campi modificati, del = eliminato) */
+function offSnap(ref,s){
+  const m=new Map();
+  for(const [id,r] of Object.entries(C.recs[ref.sec]||{}))if(!r.x)m.set(id,rev(r.st));
+  for(const d of s.docs){
+    const x=d.data()||{},p=x._pend;
+    if(p==='del'){m.delete(d.id);continue}
+    const y={...x};delete y._pend;
+    if(p==='upd')m.set(d.id,{...(m.get(d.id)||{}),...y});
+    else if(p==='set'||!m.has(d.id))m.set(d.id,y)}
+  const docs=[...m].map(([id,v])=>({id,exists:()=>true,data:()=>v}));
+  return {docs,size:docs.length,empty:!docs.length,forEach:f=>docs.forEach(f)}}
+/* scrittura senza Telegram */
+const offRef=ref=>SDK.doc(ref.db,'sections',ref.S,ref.coll,ref.id);
+async function offGet(ref){const sn=await SDK.getDoc(offRef(ref));return sn.exists()?sn.data():null}
+async function offUpd(ref,patch){const ex=await offGet(ref);
+  await SDK.setDoc(offRef(ref),{...toSdk(patch),_pend:ex&&ex._pend==='set'?'set':'upd'},{merge:true})}
 export async function getDocs(ref){
   if(!ref||!ref.__tg)return SDK.getDocs(ref);
   await startOnce();const s=snapOf(ref);s.size=s.docs.length;return s}
@@ -329,16 +379,19 @@ async function nelCestino(ref,r){
 
 export async function addDoc(col,data){
   if(!col||!col.__tg)return SDK.addDoc(col,toSdk(data));
+  if(offline()){const id=newId();await SDK.setDoc(offRef({...col,id}),{...toSdk(data),_pend:'set'});return {id}}
   const ref=tgRef(col.db,col.S,col.coll,newId());await write(ref,'set',ser(data));
   if(loggabile(ref))logEvento('crea',ref.S,ref.id,titoloDi(data,ref.id));
   return {id:ref.id}}
 export async function setDoc(ref,data,opts){
   if(!ref||!ref.__tg)return SDK.setDoc(ref,toSdk(data),opts);
+  if(offline()){if(opts&&opts.merge)return offUpd(ref,data);return SDK.setDoc(offRef(ref),{...toSdk(data),_pend:'set'})}
   await startOnce();const r0=recOf(ref.sec,ref.id),esisteva=!!r0&&!r0.x;
   await write(ref,opts&&opts.merge?'upd':'set',ser(data));
   if(loggabile(ref)){const r=recOf(ref.sec,ref.id);logEvento(esisteva?'modifica':'crea',ref.S,ref.id,titoloDi(r&&r.st,ref.id))}}
 export async function updateDoc(ref,patch,...rest){
   if(!ref||!ref.__tg)return SDK.updateDoc(ref,toSdk(patch),...rest);
+  if(offline())return offUpd(ref,patch);
   await startOnce();
   const r=recOf(ref.sec,ref.id);
   if(r&&r.x){const e=new Error('NOT_FOUND');e.code='not-found';throw e}
@@ -349,6 +402,9 @@ export async function updateDoc(ref,patch,...rest){
     const r2=recOf(ref.sec,ref.id);logEvento('modifica',ref.S,ref.id,titoloDi(r2&&r2.st,ref.id),campi?'campi: '+campi:'')}}
 export async function deleteDoc(ref,opts){
   if(!ref||!ref.__tg)return SDK.deleteDoc(ref);
+  if(offline()){const ex=await offGet(ref);
+    if(ex&&ex._pend==='set')await SDK.deleteDoc(offRef(ref));          /* creato senza Telegram e mai trasferito: basta toglierlo */
+    else await SDK.setDoc(offRef(ref),{_pend:'del'});return}
   await startOnce();
   const r=recOf(ref.sec,ref.id);if(protetto(r))throw errProt();
   const titolo=titoloDi(r&&r.st,ref.id),daCestino=loggabile(ref)&&r&&!r.x&&!(opts&&opts.definitivo);
