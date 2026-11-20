@@ -25,6 +25,7 @@ tick();setInterval(tick,15000);
 const SEC=window.PFM_SEC||'documenti',NOME={documenti:'Documenti',video:'Video',foto:'Foto'}[SEC]||'Documenti',MEDIA=SEC!=='documenti';
 const ACCEPT={video:'video/*',foto:'image/*'}[SEC]||'';
 const MAX=20*1024*1024,CH=900000,MAX_TG=500*1024*1024;
+let starOnly=(()=>{try{return localStorage.getItem('doc_star')==='1'}catch(e){return false}})();   /* filtro: solo i file con la stella */
 let auth,db,col,uid=null,me=null,items=[],cur='',q='',unsubs=[],hashDone=false,selMode=false,sel=new Set(),vis=[];
 const VKEY=SEC==='documenti'?'doc_view':SEC+'_view';
 let view=(()=>{try{return localStorage.getItem(VKEY)||'list'}catch(e){return 'list'}})();
@@ -103,19 +104,19 @@ const cancel={label:'Annulla',cls:'ghost'};
 function render(){
   if(!me||perm()==='n')return;
   const w=canW(),f=document.activeElement&&document.activeElement.id==='q',t=q.trim().toLowerCase();
-  const list=sortL(t?items.filter(i=>i.title.toLowerCase().includes(t)):children(cur));vis=list;
+  const list=sortL((t||starOnly)?(starOnly?items.filter(i=>i.star):items).filter(i=>!t||i.title.toLowerCase().includes(t)):children(cur));vis=list;
   const crumbs=[];let x=byId(cur);while(x){crumbs.unshift(x);x=byId(x.parent)}
   const rows=list.map(i=>{const meta=[i.kind==='folder'?'':fmtSize(i.size),fmtDate(i)].filter(Boolean).join(' · ');
-    const where=t&&i.parent?`<div class="mu" style="font-size:.75rem">${esc(pathOf(i.parent))}</div>`:'';
+    const where=(t||starOnly)&&i.parent?`<div class="mu" style="font-size:.75rem">${esc(pathOf(i.parent))}</div>`:'';
     return view==='list'
       ?`<div class="frow"${thAttr(i)}>${lead(i)}<span class="fi" aria-hidden="true">${ico(i)}</span><button class="fn" data-act="open" data-id="${esc(i.id)}"><b>${esc(i.title)}</b>${i.fb?' <span class="mu" title="Salvato anche su Firebase" aria-label="Salvato anche su Firebase">☁</span>':''}${ristretto(i)?' <span class="mu" title="Visibile solo ad alcuni" aria-label="Visibile solo ad alcuni">🔒</span>':''}${where}${scadLine(i)}</button><span class="meta">${esc(meta)}</span><button class="btn ghost sm" data-act="note" data-id="${esc(i.id)}" aria-label="Note di ${esc(i.title)}">Note${i.note?' •':''}</button><button class="btn ghost sm" data-act="more" data-id="${esc(i.id)}" aria-label="Altre azioni per ${esc(i.title)}">⋯</button></div>`
       :`<div class="ico"${thAttr(i)}>${lead(i)}<button class="big" data-act="open" data-id="${esc(i.id)}" aria-label="Apri ${esc(i.title)}">${ico(i)}</button><button class="nm" data-act="open" data-id="${esc(i.id)}">${esc(i.title)}</button><button class="more" data-act="more" data-id="${esc(i.id)}" aria-label="Altre azioni per ${esc(i.title)}">⋯</button></div>`}).join('');
   app.innerHTML=`<div class="top"><a class="btn ghost sm" href="index.html" style="text-decoration:none">← Home</a><input id="q" type="search" placeholder="Cerca in ${NOME}" aria-label="Cerca" value="${esc(q)}"><span class="who">${esc(me.name||me.email||'')}</span><button class="btn ghost sm" id="out">Esci</button></div>
   <div class="wrap"><div class="bar"><h2>${NOME}</h2><div class="seg" role="group" aria-label="Vista"><button data-act="view" data-id="icons" aria-pressed="${view==='icons'}">Icone</button><button data-act="view" data-id="list" aria-pressed="${view==='list'}">Elenco</button></div></div>
   ${w?`<div class="tools"><button class="btn sm" data-act="upf">Carica file</button><button class="btn sm" data-act="upd">Carica cartella</button><button class="btn ghost sm" data-act="newdir">Nuova cartella</button>${MEDIA?'':'<button class="btn ghost sm" data-act="newtxt">Nuova nota .txt</button>'}<label class="mu" style="display:inline-flex;gap:6px;align-items:center;font-size:.85rem"><input type="checkbox" data-act="fbn" ${fbNew?'checked':''}> Salva anche su Firebase</label><label class="mu" style="display:inline-flex;gap:6px;align-items:center;font-size:.85rem">Visibile a <select data-act="vm" aria-label="Chi può vedere i file che carichi"><option value="all">Tutti</option><option value="sel" ${visMode==='sel'?'selected':''}>${me.admin?'Solo chi scelgo…':'Solo io e l’admin'}</option></select>${visMode==='sel'&&me.admin?`<button class="btn ghost sm" data-act="vpick">${visSel.size} ${visSel.size===1?'persona':'persone'}</button>`:''}</label><input type="file" id="uf" multiple ${ACCEPT?`accept="${ACCEPT}"`:''} hidden><input type="file" id="ud" webkitdirectory hidden></div>`:''}
-  <div class="tools"><button class="btn ghost sm" data-act="selmode">${selMode?'Esci dalla selezione':'Seleziona'}</button>${selMode?`<button class="btn ghost sm" data-act="selall">Seleziona tutto</button><button class="btn sm" data-act="dlsel" ${sel.size?'':'disabled'}>Scarica selezionati (${sel.size})</button>`:''}</div>
+  <div class="tools"><button class="btn${starOnly?'':' ghost'} sm" data-act="staronly" aria-pressed="${starOnly}" title="Mostra solo i documenti con la stella">★ Solo con stella</button><button class="btn ghost sm" data-act="selmode">${selMode?'Esci dalla selezione':'Seleziona'}</button>${selMode?`<button class="btn ghost sm" data-act="selall">Seleziona tutto</button><button class="btn sm" data-act="dlsel" ${sel.size?'':'disabled'}>Scarica selezionati (${sel.size})</button>`:''}</div>
   <nav class="crumb" aria-label="Percorso"><button data-act="goto" data-id="">${NOME}</button>${crumbs.map(c=>`<span aria-hidden="true">/</span><button data-act="goto" data-id="${esc(c.id)}">${esc(c.title)}</button>`).join('')}</nav>
-  <div class="card">${list.length?(view==='list'?rows:`<div class="icons">${rows}</div>`):`<div class="mu">${t?'Nessun risultato.':'Cartella vuota.'+(w?' Carica file o crea una cartella.':'')}</div>`}</div></div>`;
+  <div class="card">${list.length?(view==='list'?rows:`<div class="icons">${rows}</div>`):`<div class="mu">${starOnly?'Nessun documento con la stella.':t?'Nessun risultato.':'Cartella vuota.'+(w?' Carica file o crea una cartella.':'')}</div>`}</div></div>`;
   if(f){const i=$('#q');i.focus();i.setSelectionRange(q.length,q.length)}
   $('#q').oninput=e=>{q=e.target.value;render()};
   $('#out').onclick=()=>signOut(auth).then(()=>location.href='index.html');
@@ -135,6 +136,7 @@ function act(a,id){
   else if(a==='newdir')newDir();
   else if(a==='newtxt')editText(null);
   else if(a==='selmode'){selMode=!selMode;sel.clear();render()}
+  else if(a==='staronly'){starOnly=!starOnly;try{localStorage.setItem('doc_star',starOnly?'1':'0')}catch(e){}render()}
   else if(a==='selall'){vis.forEach(i=>sel.add(i.id));render()}
   else if(a==='dlsel')dlSel();
   else if(a==='vpick')pickVis();
