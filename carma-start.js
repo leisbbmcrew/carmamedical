@@ -5,7 +5,7 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 import {getAuth,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getDoc,doc as sdkDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {firebaseConfig} from "./firebase-config.js";
-import {getFirestore,collection,doc,onSnapshot,addDoc,setDoc,updateDoc,deleteDoc} from "./fsx.js";
+import {getFirestore,collection,doc,onSnapshot,addDoc,setDoc,updateDoc,deleteDoc,prendiInAttesa} from "./fsx.js";
 import {assicuraCoppia} from "./cifra.js";
 import {tgConfigured,hasSession,clearSession,loadTg,newClient,tgLogin,tgErrText,withTimeout,consoleLog,libSource,shimError} from "./telegram.js";
 
@@ -132,7 +132,7 @@ function creaDb(){
   }};
 }
 
-window.CARMA={get chi(){return chi||(auth.currentUser&&auth.currentUser.email)||''},esci:async()=>{clearSession();await signOut(auth);location.reload()},
+window.CARMA={inAttesa:prendiInAttesa,get chi(){return chi||(auth.currentUser&&auth.currentUser.email)||''},esci:async()=>{clearSession();await signOut(auth);location.reload()},
   /* collega Telegram in un secondo momento (tocca il pallino grigio in alto): poi si ricarica e i dati salvati senza Telegram passano da soli */
   collega:async()=>{try{const ok=await accessoTelegram();ov.remove();if(ok&&hasSession())location.reload()}catch(e){console.error(e);ov.remove()}}};
 (async()=>{
@@ -140,10 +140,12 @@ window.CARMA={get chi(){return chi||(auth.currentUser&&auth.currentUser.email)||
     await accessoFirebase();
     /* Cestino e Storico hanno bisogno della loro coppia di chiavi: senza, ogni eliminazione viene fermata. Si crea una volta sola. */
     await Promise.all(['cestino','storico'].map(k=>assicuraCoppia(k).catch(e=>console.warn('Chiavi '+k+':',e&&e.message))));
+    /* aperto da una pagina (Documenti, Archivio, Cestino) solo per collegare Telegram: dopo si ricarica la pagina */
+    if(window.__carmaSoloTg){const ok=await accessoTelegram();ov.remove();if(ok&&hasSession())location.reload();return}
     await accessoTelegram();
     ov.remove();
     window.__carmaResolve(creaDb());
   }catch(e){
-    console.error(e);ov.remove();window.__carmaResolve(null);
+    console.error(e);ov.remove();if(window.__carmaResolve)window.__carmaResolve(null);
   }
 })();

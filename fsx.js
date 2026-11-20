@@ -189,24 +189,27 @@ function startOnce(){
   startP.then(()=>{if(hasSession()&&!tgDown)migraInSospeso().catch(()=>{})},()=>{});
   return startP}
 /* ---------- trasferimento automatico: ciò che è stato salvato senza Telegram passa sul registro appena c'è la sessione ---------- */
-const SEZ_MIGRA=['utenti','schede','calendario','ingressi','pacchetti','eventi','documenti'];
+const SEZ_MIGRA=['utenti','schede','calendario','ingressi','pacchetti','eventi','documenti','archivio','cestino','tema'];
 let migrando=null;
 export function migraInSospeso(){
   if(migrando)return migrando;
   migrando=(async()=>{
     if(!tgConfigured()||!hasSession()||tgDown)return 0;
     await startOnce();
-    let n=0;
+    let n=0,fail=0;
     for(const sec of SEZ_MIGRA){
       let sn;try{sn=await SDK.getDocs(SDK.collection(DB,'sections',sec,'items'))}catch(e){continue}
       for(const d of sn.docs){
         const x=d.data()||{},p=x._pend;if(!p)continue;
         const y={...x};delete y._pend;
         const ref=tgRef(DB,sec,'items',d.id),r=recOf(sec,d.id),esiste=!!r&&!r.x;
-        if(p==='del'){if(esiste)await deleteDoc(ref)}
-        else if(p==='upd'&&esiste)await write(ref,'upd',ser(y),true);
-        else await write(ref,'set',ser(y),true);
-        await SDK.deleteDoc(d.ref);n++}}
+        try{
+          if(p==='del'){if(esiste)await delOnline(ref)}
+          else if(p==='upd'&&esiste)await write(ref,'upd',ser(y),true);
+          else await write(ref,'set',ser(y),true);
+          await SDK.deleteDoc(d.ref);n++}
+        catch(e){fail++;console.warn('Resta in attesa su Firebase:',sec,d.id,e&&e.message)}}}
+    if(fail)avviso(fail+(fail===1?' modifica resta':' modifiche restano')+' in attesa su Firebase (Telegram non l’ha accettata): riproverò alla prossima apertura.');
     if(n)avviso('Telegram collegato: '+n+(n===1?' elemento salvato':' elementi salvati')+' senza Telegram '+(n===1?'è stato trasferito':'sono stati trasferiti')+' nell’archivio.');
     return n})().catch(e=>{migrando=null;console.warn('Trasferimento non completato:',e&&e.message);throw e});
   return migrando}
@@ -267,7 +270,19 @@ function offSnap(ref,s){
 /* scrittura senza Telegram */
 const offRef=ref=>SDK.doc(ref.db,'sections',ref.S,ref.coll,ref.id);
 async function offGet(ref){const sn=await SDK.getDoc(offRef(ref));return sn.exists()?sn.data():null}
-async function offUpd(ref,patch){const ex=await offGet(ref);
+/* Se Telegram non c'è o non risponde, la modifica si salva su Firebase "in sospeso" (_pend) e passa su Telegram appena si ricollega. */
+let pendNote=false;
+export const prendiInAttesa=()=>{const v=pendNote;pendNote=false;return v};
+const daFallback=e=>{const m=(e&&e.message)||'',c=e&&e.code;
+  if(m==='PROTETTO'||m==='NOT_FOUND'||c==='permission-denied'||c==='not-found')return false;      /* errori veri: si mostrano */
+  if(m!=='NOPUB'&&m!=='CESTINO')tgDown=true;      /* rete o Telegram giù: si lavora su Firebase fino alla prossima apertura */
+  console.warn('Telegram non disponibile, modifica messa in attesa su Firebase:',m);return true};
+async function offAdd(col,data){pendNote=true;const id=newId();await SDK.setDoc(offRef({...col,id}),{...toSdk(data),_pend:'set'});return {id}}
+async function offSetDoc(ref,data,opts){pendNote=true;if(opts&&opts.merge)return offUpd(ref,data);return SDK.setDoc(offRef(ref),{...toSdk(data),_pend:'set'})}
+async function offDel(ref){pendNote=true;const ex=await offGet(ref);
+  if(ex&&ex._pend==='set')await SDK.deleteDoc(offRef(ref));          /* creato senza Telegram e mai trasferito: basta toglierlo */
+  else await SDK.setDoc(offRef(ref),{_pend:'del'})}
+async function offUpd(ref,patch){pendNote=true;const ex=await offGet(ref);
   await SDK.setDoc(offRef(ref),{...toSdk(patch),_pend:ex&&ex._pend==='set'?'set':'upd'},{merge:true})}
 export async function getDocs(ref){
   if(!ref||!ref.__tg)return SDK.getDocs(ref);
@@ -379,32 +394,36 @@ async function nelCestino(ref,r){
 
 export async function addDoc(col,data){
   if(!col||!col.__tg)return SDK.addDoc(col,toSdk(data));
-  if(offline()){const id=newId();await SDK.setDoc(offRef({...col,id}),{...toSdk(data),_pend:'set'});return {id}}
-  const ref=tgRef(col.db,col.S,col.coll,newId());await write(ref,'set',ser(data));
+  if(offline())return offAdd(col,data);
+  const ref=tgRef(col.db,col.S,col.coll,newId());
+  try{await write(ref,'set',ser(data))}catch(e){if(!daFallback(e))throw e;return offAdd(col,data)}
   if(loggabile(ref))logEvento('crea',ref.S,ref.id,titoloDi(data,ref.id));
   return {id:ref.id}}
 export async function setDoc(ref,data,opts){
   if(!ref||!ref.__tg)return SDK.setDoc(ref,toSdk(data),opts);
-  if(offline()){if(opts&&opts.merge)return offUpd(ref,data);return SDK.setDoc(offRef(ref),{...toSdk(data),_pend:'set'})}
-  await startOnce();const r0=recOf(ref.sec,ref.id),esisteva=!!r0&&!r0.x;
-  await write(ref,opts&&opts.merge?'upd':'set',ser(data));
+  if(offline())return offSetDoc(ref,data,opts);
+  let esisteva;
+  try{await startOnce();const r0=recOf(ref.sec,ref.id);esisteva=!!r0&&!r0.x;
+    await write(ref,opts&&opts.merge?'upd':'set',ser(data))}catch(e){if(!daFallback(e))throw e;return offSetDoc(ref,data,opts)}
   if(loggabile(ref)){const r=recOf(ref.sec,ref.id);logEvento(esisteva?'modifica':'crea',ref.S,ref.id,titoloDi(r&&r.st,ref.id))}}
 export async function updateDoc(ref,patch,...rest){
   if(!ref||!ref.__tg)return SDK.updateDoc(ref,toSdk(patch),...rest);
   if(offline())return offUpd(ref,patch);
-  await startOnce();
-  const r=recOf(ref.sec,ref.id);
-  if(r&&r.x){const e=new Error('NOT_FOUND');e.code='not-found';throw e}
-  const d=ser(patch);
-  if(protetto(r)){const n=d.conservaFinoTs;if('conservaFinoTs' in d&&!(n&&typeof n.$ts==='number'&&n.$ts>=r.st.conservaFinoTs.$ts))throw errProt()}
-  await write(ref,'upd',d);
+  let d;
+  try{await startOnce();
+    const r=recOf(ref.sec,ref.id);
+    if(r&&r.x){const e=new Error('NOT_FOUND');e.code='not-found';throw e}
+    d=ser(patch);
+    if(protetto(r)){const n=d.conservaFinoTs;if('conservaFinoTs' in d&&!(n&&typeof n.$ts==='number'&&n.$ts>=r.st.conservaFinoTs.$ts))throw errProt()}
+    await write(ref,'upd',d)}catch(e){if(!daFallback(e))throw e;return offUpd(ref,patch)}
   if(loggabile(ref)){const campi=Object.keys(d).filter(k=>!['at','by','thumb'].includes(k)).slice(0,8).join(', ');
     const r2=recOf(ref.sec,ref.id);logEvento('modifica',ref.S,ref.id,titoloDi(r2&&r2.st,ref.id),campi?'campi: '+campi:'')}}
 export async function deleteDoc(ref,opts){
   if(!ref||!ref.__tg)return SDK.deleteDoc(ref);
-  if(offline()){const ex=await offGet(ref);
-    if(ex&&ex._pend==='set')await SDK.deleteDoc(offRef(ref));          /* creato senza Telegram e mai trasferito: basta toglierlo */
-    else await SDK.setDoc(offRef(ref),{_pend:'del'});return}
+  if(offline())return offDel(ref);
+  try{return await delOnline(ref,opts)}catch(e){if(!daFallback(e))throw e;return offDel(ref)}}
+/* eliminazione vera su Telegram (con passaggio dal Cestino); chi la usa gestisce l'errore */
+async function delOnline(ref,opts){
   await startOnce();
   const r=recOf(ref.sec,ref.id);if(protetto(r))throw errProt();
   const titolo=titoloDi(r&&r.st,ref.id),daCestino=loggabile(ref)&&r&&!r.x&&!(opts&&opts.definitivo);

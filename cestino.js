@@ -97,11 +97,11 @@ async function purge(list){
 const avvisoTg=n=>n?' Per '+n+(n===1?' file':' file')+' il messaggio su Telegram non si è potuto cancellare da questo account: eliminalo a mano dal gruppo.':'';
 function eliminaUno(e){
   dialogo('Eliminare per sempre?',`“${esc(e.titolo)}” verrà eliminato definitivamente${e.tg||e.chunks?', file compreso':''}. Non si potrà più recuperare.`,
-    [{label:'Annulla',ghost:true},{label:'Elimina per sempre',fn:async()=>{const n=await purge([e]);msg='Eliminato definitivamente.'+avvisoTg(n);render()},errore:'Eliminazione non riuscita.'}])}
+    [{label:'Annulla',ghost:true},{label:'Elimina per sempre',fn:async()=>{const n=await purge([e]);msg='Eliminato definitivamente.'+avvisoTg(n);render()},errore:'Eliminazione non riuscita. Controlla che Telegram sia collegato (avviso giallo in alto) e riprova.'}])}
 function svuota(){
   const l=filtrate().filter(e=>puo(e.sec));if(!l.length)return;
   dialogo('Svuotare il Cestino?',`Verranno eliminati per sempre ${l.length} ${l.length===1?'elemento':'elementi'}${fs||q.trim()?' (solo quelli che vedi con i filtri attuali)':''}, file compresi. Non si potranno più recuperare.`,
-    [{label:'Annulla',ghost:true},{label:'Elimina tutto',fn:async()=>{const n=await purge(l);msg=l.length+' elementi eliminati definitivamente.'+avvisoTg(n);render()},errore:'Svuotamento non riuscito.'}])}
+    [{label:'Annulla',ghost:true},{label:'Elimina tutto',fn:async()=>{const n=await purge(l);msg=l.length+' elementi eliminati definitivamente.'+avvisoTg(n);render()},errore:'Svuotamento non riuscito. Controlla che Telegram sia collegato (avviso giallo in alto) e riprova.'}])}
 /* alla prima apertura chi ha la scrittura elimina da solo quello che ha superato i 30 giorni */
 async function autoPulizia(){
   if(purgato||perm()!=='w')return;purgato=true;

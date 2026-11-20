@@ -720,9 +720,15 @@ async function dl(id,side){
     else{var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove()}
   }catch(e){ if(e&&e.code==='declined')return; st('dstat','Download non riuscito. Riprova.') }
 }
-var delErr=null;
+var delErr=null,delOff=false;
 /* elimina un documento e dice se è riuscita: gli errori non si nascondono più (prima l'elemento "tornava" senza spiegazioni) */
-async function delDoc(col,id){try{await col.doc(String(id)).delete();return true}catch(e){console.error('Eliminazione non riuscita',e);delErr=delErr||e;return false}}
+async function delDoc(col,id){try{await col.doc(String(id)).delete();if(window.CARMA&&CARMA.inAttesa&&CARMA.inAttesa())delOff=true;return true}catch(e){console.error('Eliminazione non riuscita',e);delErr=delErr||e;return false}}
+/* fine di un'eliminazione: errore, oppure avviso se Telegram non era collegato (l'elemento va nel Cestino quando lo colleghi), oppure chiude */
+function delEnd(){
+  if(delErr){delFail();return}
+  if(delOff){delOff=false;modal('<h3>Eliminato</h3><p>Telegram non è disponibile in questo momento: l’eliminazione è salvata su Firebase e passerà su Telegram (e nel Cestino) appena sarà collegato. Nel frattempo l’elemento non si vede più nell’elenco.</p><div class="mrow"><button class="pri" data-act="mclose">Ok</button></div>');return}
+  closeModal();
+}
 function delFail(){
   var e=delErr;delErr=null;var c=e&&(e.message||e.code)||'',m;
   if(c==='NOPUB')m='Il Cestino non è ancora pronto. Chiudi e riapri l’app (la prima volta lo prepara da solo) e riprova.';
@@ -744,7 +750,7 @@ async function doDelete(){
   }
   if(!dbCol)U=U.filter(function(u){return !sel[u.id]});
   sel={};dm=false;listUtenti();
-  if(delErr)delFail();else closeModal();
+  delEnd();
 }
 document.addEventListener('change',function(e){var t=e.target;if(t.getAttribute&&t.getAttribute('data-side')&&t.files&&t.files[0]){var f=t.files[0];pickFile(t.getAttribute('data-side'),f);t.value=''}});
 document.addEventListener('click',function(e){
@@ -913,7 +919,7 @@ async function doDelSchede(){
   if(dbSch){for(var i=0;i<ids.length;i++){await delDoc(dbSch,ids[i])}}
   else SCH=SCH.filter(function(x){return !ssel[x.id]});
   ssel={};sdm=false;listSchede();drawTrend();
-  if(delErr)delFail();else closeModal();
+  delEnd();
 }
 async function dropSchedeOf(id){
   var L=schedeOf(id);
@@ -1176,7 +1182,7 @@ async function saveCalForm(){
 async function delCal(id){
   if(dbCal){if(!await delDoc(dbCal,id)){delFail();return}}
   CAL=CAL.filter(function(x){return String(x.id)!==String(id)});
-  closeModal();drawCal();
+  drawCal();delEnd();
 }
 // ---- spostamento e ridimensionamento col dito o col mouse ----
 function dragOn(d){
@@ -1441,7 +1447,7 @@ async function delIng(ids,quiet){
   for(var i=0;i<ids.length;i++){if(!dbIng||await delDoc(dbIng,ids[i]))ok.push(String(ids[i]))}
   ING=ING.filter(function(x){return ok.indexOf(String(x.id))<0});
   isel={};idm=false;listIng();
-  if(delErr&&!quiet)delFail();else if(!quiet)closeModal();
+  if(!quiet)delEnd();
 }
 async function dropIngOf(id){
   var ids=regOf(id).map(function(x){return String(x.id)});
@@ -1521,7 +1527,7 @@ async function delPac(id){
   var linked=ING.filter(function(x){return String(x.pid)===String(id)});
   for(var i=0;i<linked.length;i++){linked[i].pid='';if(dbIng){try{await dbIng.doc(String(linked[i].id)).update({pid:''})}catch(e){}}}
   PAC=PAC.filter(function(x){return String(x.id)!==String(id)});
-  closeModal();listIng();
+  listIng();delEnd();
 }
 async function dropUserFromPac(id){
   var sid=String(id),L=PAC.filter(function(p){return (p.uids||[]).indexOf(sid)>-1});
@@ -1812,7 +1818,7 @@ async function delEv(ids){
   }
   if(!dbEvt||!delErr)EVT=EVT.filter(function(x){return ids.indexOf(String(x.id))<0});
   esel={};evm=false;listEv();
-  if(delErr)delFail();else closeModal();
+  delEnd();
 }
 document.addEventListener('input',function(e){if(e.target.id==='evsearch'){evq=e.target.value;listEv()}});
 document.addEventListener('change',function(e){
