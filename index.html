@@ -484,11 +484,32 @@ function renderUtenti(){
   document.getElementById('main').innerHTML =
    '<div class="uh"><div><h2>Utenti</h2><p class="sub" id="ucount"></p></div><div class="uact">'+
    '<button class="ab pri" data-act="add" aria-label="Crea utente"><span class="i">+</span><span class="t">Crea</span></button>'+
+   '<button class="ab" data-act="exp" aria-label="Scarica elenco utenti"><span class="i">↓</span><span class="t">Scarica</span></button>'+
    '<button class="ab" id="bdel" data-act="del" aria-label="Elimina utenti"><span class="i">−</span><span class="t">Elimina</span></button></div></div>'+
    '<input class="search" id="usearch" type="search" placeholder="Cerca per nome, codice fiscale, email…" value="'+esc(uq)+'">'+
    '<div id="dbar"></div><div id="ulist"></div>';
   document.getElementById('usearch').addEventListener('input',function(e){uq=e.target.value;listUtenti()});
   listUtenti();
+}
+/* Scarica l'elenco di tutti gli utenti in CSV (si apre con Excel, Numbers e Fogli Google). Le note riservate non vengono incluse. */
+async function expUtenti(){
+  var L=U.slice().sort(function(a,b){return (a.c+a.n).localeCompare(b.c+b.n)});
+  if(!L.length){modal('<h3>Nessun utente</h3><p>Non ci sono utenti da scaricare.</p><div class="mrow"><button class="pri" data-act="mclose">Ok</button></div>');return}
+  function cell(v,txt){
+    v=v==null?'':String(v).replace(/[\r\n]+/g,' ').trim();
+    if(txt&&/^[+0][\d\s]+$/.test(v))return '="'+v+'"';                       /* telefono / n. documento: Excel non toglie zeri e + */
+    if(/^[=@]/.test(v)||(/^[+\-]/.test(v)&&!/^[+\-]?[\d\s().\-]+$/.test(v)))v="'"+v;   /* evita che il testo venga letto come formula */
+    return '"'+v.replace(/"/g,'""')+'"';
+  }
+  var d=function(x){return x?fdate(x):''};
+  var rows=[['Cognome','Nome','Data di nascita','Codice fiscale','Telefono','Email','Città di residenza','N. documento','Scadenza documento','Non rinnova','Ingressi rimasti']];
+  L.forEach(function(u){
+    rows.push([cell(u.c),cell(u.n),cell(d(u.d)),cell(u.cf),cell(u.t,1),cell(u.e),cell(u.ci),cell(u.dn,1),cell(d(u.ds)),cell(u.nr?'Sì':''),cell(restUser(u.id))]);
+  });
+  rows[0]=rows[0].map(function(x){return cell(x)});
+  var csv='\ufeff'+rows.map(function(r){return r.join(';')}).join('\r\n');
+  try{await saveBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'Utenti_Carma_'+iso(new Date())+'.csv')}
+  catch(e){modal('<h3>Download non riuscito</h3><p>Riprova tra un attimo.</p><div class="mrow"><button class="pri" data-act="mclose">Ok</button></div>')}
 }
 function hasDoc(u){return !!(u.frontId||u.backId||u.frontBlob||u.backBlob)}
 function listUtenti(){
@@ -762,6 +783,7 @@ document.addEventListener('click',function(e){
     else if(k==='msave')saveUser(false,a.getAttribute('data-id')||null);
     else if(k==='msavepk')saveUser(true,null);
     else if(k==='dl')dl(a.getAttribute('data-id'),a.getAttribute('data-side'));
+    else if(k==='exp')expUtenti();
     else if(k==='del'){dm=!dm;sel={};listUtenti()}
     else if(k==='cancel'){dm=false;sel={};listUtenti()}
     else if(k==='confirmdel'){var n=Object.keys(sel).length;if(!n)return;modal('<h3>Elimina utenti</h3><p>Vuoi eliminare '+n+(n===1?' utente selezionato':' utenti selezionati')+', compresi i documenti salvati? L’operazione non si può annullare.</p><div class="mrow"><button data-act="mclose">Annulla</button><button class="danger" data-act="dodel">Elimina</button></div>')}
