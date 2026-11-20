@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Carma Medical Wellness</title>
+<link rel="icon" type="image/png" href="logo-carma.png">
 <style>
-:root{--bg:#f3f7f6;--surface:var(--sf,#fff);--text:var(--tx,#12302b);--muted:var(--mu,#5d7872);--line:var(--ln,#dbe6e3);--brand:var(--ac,#0f766e);--brand-soft:color-mix(in srgb,var(--ac,#0f766e) 14%,var(--sf,#fff));--c1:#0f766e;--c2:#c2410c;--c3:#1d4ed8;--c4:#7e22ce;
+:root{--bg:#f3f7f6;--surface:var(--sf,#fff);--text:var(--tx,#12302b);--muted:var(--mu,#5d7872);--line:var(--ln,#dbe6e3);--brand:var(--ac,#0f766e);--brand-soft:color-mix(in srgb,var(--ac,#0f766e) 14%,var(--sf,#fff));--c1:var(--ac,#0f766e);--c2:var(--ac2,#c2410c);--c3:#1d4ed8;--c4:#7e22ce;
 color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a18;--surface:var(--sf,#152724);--text:var(--tx,#e6f2ef);--muted:var(--mu,#92b0aa);--line:var(--ln,#24403b);--brand:var(--ac,#2dd4bf);--brand-soft:color-mix(in srgb,var(--ac,#2dd4bf) 14%,var(--sf,#152724));--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0d1a18;--surface:var(--sf,#152724);--text:var(--tx,#e6f2ef);--muted:var(--mu,#92b0aa);--line:var(--ln,#24403b);--brand:var(--ac,#2dd4bf);--brand-soft:color-mix(in srgb,var(--ac,#2dd4bf) 14%,var(--sf,#152724));--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a18;--surface:var(--sf,#152724);--text:var(--tx,#e6f2ef);--muted:var(--mu,#92b0aa);--line:var(--ln,#24403b);--brand:var(--ac,#2dd4bf);--brand-soft:color-mix(in srgb,var(--ac,#2dd4bf) 14%,var(--sf,#152724));--c1:var(--ac,#2dd4bf);--c2:var(--ac2,#fb923c);--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1a18;--surface:var(--sf,#152724);--text:var(--tx,#e6f2ef);--muted:var(--mu,#92b0aa);--line:var(--ln,#24403b);--brand:var(--ac,#2dd4bf);--brand-soft:color-mix(in srgb,var(--ac,#2dd4bf) 14%,var(--sf,#152724));--c1:var(--ac,#2dd4bf);--c2:var(--ac2,#fb923c);--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -20,7 +21,8 @@ body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-syst
 .stage.mobile .app{max-width:400px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
 .stage.tablet .app{max-width:1024px;border-left:1px solid var(--line);border-right:1px solid var(--line)}
 header{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
-.logo{width:40px;height:40px;border-radius:12px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:20px}
+.logo{width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid var(--line);color:#fff;display:grid;place-items:center;overflow:hidden;flex:none;padding:3px}
+.logo img{width:100%;height:100%;object-fit:contain;display:block}
 header h1{font-size:18px;margin:0;line-height:1.2}
 header small{color:var(--muted);font-size:13px}
 .layout{display:flex;flex:1;min-height:0}
@@ -336,7 +338,7 @@ h2,h3,.cells b,.cells span,.urow b,.avn,.dbar span,.card h3,.card p,.mbox h3,.st
 <div class="app">
   <div id="login" aria-hidden="true">
     <div class="lbox">
-      <div class="logo">C</div>
+      <div class="logo"><img src="logo-carma.png" alt="Carma"></div>
       <h2>Carma Medical Wellness</h2>
       <input type="email" placeholder="Email" autocomplete="username">
       <input type="password" placeholder="Password" autocomplete="current-password">
@@ -344,7 +346,7 @@ h2,h3,.cells b,.cells span,.urow b,.avn,.dbar span,.card h3,.card p,.mbox h3,.st
     </div>
   </div>
   <header>
-    <div class="logo" id="logoTema" role="button" tabindex="0" title="Temi" aria-label="Apri i temi" style="cursor:pointer">C</div>
+    <div class="logo" id="logoTema" role="button" tabindex="0" title="Temi" aria-label="Apri i temi" style="cursor:pointer"><img src="logo-carma.png" alt="Carma"></div>
     <div><h1>Carma Medical Wellness</h1><small>Gestione palestra</small></div>
   </header>
   <div class="layout">

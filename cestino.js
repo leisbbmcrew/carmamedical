@@ -40,7 +40,7 @@ function dialogo(titolo,corpo,bottoni){
 function costruisci(){
   shell=true;
   app.innerHTML=`<div class="top"><a class="btn ghost sm" href="index.html" style="text-decoration:none">← Home</a><span style="flex:1"></span><span class="who">${esc(me.name||me.email||'')}</span><button class="btn ghost sm" id="out">Esci</button></div>
-  <div class="wrap"><div class="hd"><a class="logo" href="tema.html" title="Temi">C</a><div><h2 style="margin:0">Cestino</h2><span class="badge">${perm()==='w'?'Lettura e scrittura':'Solo lettura'}</span></div></div>
+  <div class="wrap"><div class="hd"><a class="logo" href="tema.html" title="Temi"><img src="logo-carma.png" alt="Carma"></a><div><h2 style="margin:0">Cestino</h2><span class="badge">${perm()==='w'?'Lettura e scrittura':'Solo lettura'}</span></div></div>
   <div class="card"><div class="mu">Gli elementi eliminati restano qui per ${GIORNI} giorni, file compresi, poi vengono cancellati per sempre. Vedi solo gli elementi delle sezioni a cui hai accesso.</div>
     <div class="flt"><input id="q" type="search" placeholder="Cerca nel Cestino" aria-label="Cerca nel Cestino"><select id="s" aria-label="Sezione"></select>${perm()==='w'?'<button class="btn ghost sm" id="vuota">Svuota il Cestino</button>':''}</div>
     <p class="mu" id="msg" role="status" style="margin:6px 0 0"></p><div id="ls"></div></div></div>`;

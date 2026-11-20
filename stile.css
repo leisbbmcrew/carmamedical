@@ -79,7 +79,7 @@ img,svg,video,canvas{max-width:100%}
 .dlg .dact,.dlg2 .dact2,.dlg2 .dact{position:sticky;bottom:0;margin:12px calc(-1 * var(--pd)) calc(-1 * var(--pd));padding:10px var(--pd) var(--pd);background:var(--sf);border-top:1px solid var(--ln)}
 @media (max-width:560px){.dlg,.dlg2{--pd:14px}}
 
-.logo{width:40px;height:40px;border-radius:12px;background:var(--ac);color:var(--bg);display:inline-grid;place-items:center;font-weight:700;font-size:20px;flex:none;overflow:hidden;text-decoration:none}
+.logo{width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid var(--ln);display:inline-grid;place-items:center;flex:none;overflow:hidden;text-decoration:none;padding:3px}
 .logo img{width:100%;height:100%;object-fit:contain;display:block}
 .subnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:var(--sf);border-top:1px solid var(--ln)}
 .subnav a{flex:1;max-width:200px;text-align:center;padding:8px 6px;border:1px solid var(--ln);border-radius:10px;color:var(--mu);text-decoration:none;font-size:.9rem}

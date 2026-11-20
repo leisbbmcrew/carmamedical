@@ -74,7 +74,7 @@ function azioneRaccolta(e){
 function costruisci(){
   shell=true;
   app.innerHTML=`<div class="top"><a class="btn ghost sm" href="index.html" style="text-decoration:none">← Home</a><span style="flex:1"></span><span class="who">${esc(me.name||me.email||'')}</span><button class="btn ghost sm" id="out">Esci</button></div>
-  <div class="wrap"><div class="hd"><a class="logo" href="tema.html" title="Temi">C</a><div><h2 style="margin:0">Temi</h2><span class="badge">Solo admin</span></div></div>
+  <div class="wrap"><div class="hd"><a class="logo" href="tema.html" title="Temi"><img src="logo-carma.png" alt="Carma"></a><div><h2 style="margin:0">Temi</h2><span class="badge">Solo admin</span></div></div>
   <div class="card cd"><h2>Tema attivo</h2><div id="att"></div></div>
   <div class="card cd"><h2>Raccolta temi</h2><div id="racc"></div></div>
   <div class="card cd"><h2>Installa un tema</h2>
