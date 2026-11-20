@@ -37,6 +37,11 @@ service cloud.firestore {
       allow write: if admin();
     }
 
+    /* Chiave pubblica di una sezione (Cestino, Storico): la crea il primo account che apre l'app; non si modifica più. */
+    match /app/{id} {
+      allow create: if staff() && id.matches('pub-.*');
+    }
+
     /* Parti di file salvati su Firestore quando Telegram non c'è (sections/<sezione>/items/<id>/chunks/<n>) */
     match /sections/{sec}/{coll}/{id}/chunks/{c} {
       allow read, write: if staff();

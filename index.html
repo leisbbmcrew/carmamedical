@@ -720,11 +720,22 @@ async function dl(id,side){
     else{var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove()}
   }catch(e){ if(e&&e.code==='declined')return; st('dstat','Download non riuscito. Riprova.') }
 }
+var delErr=null;
+/* elimina un documento e dice se è riuscita: gli errori non si nascondono più (prima l'elemento "tornava" senza spiegazioni) */
+async function delDoc(col,id){try{await col.doc(String(id)).delete();return true}catch(e){console.error('Eliminazione non riuscita',e);delErr=delErr||e;return false}}
+function delFail(){
+  var e=delErr;delErr=null;var c=e&&(e.message||e.code)||'',m;
+  if(c==='NOPUB')m='Il Cestino non è ancora pronto. Chiudi e riapri l’app (la prima volta lo prepara da solo) e riprova.';
+  else if(c==='CESTINO')m='Non riesco a spostare l’elemento nel Cestino, quindi non lo elimino per non perdere i dati. Riprova tra poco.';
+  else if(c==='PROTETTO')m='Questo elemento è protetto e non può essere eliminato adesso.';
+  else m='Controlla la connessione (e che Telegram sia collegato) e riprova.';
+  modal('<h3>Eliminazione non riuscita</h3><p>'+m+'</p><div class="mrow"><button class="pri" data-act="mclose">Ok</button></div>');
+}
 async function doDelete(){
   var ids=Object.keys(sel);
   for(var i=0;i<ids.length;i++){
     var u=find(ids[i]); if(!u)continue;
-    if(dbCol){try{await dbCol.doc(String(u.id)).delete()}catch(e){}}
+    if(dbCol){if(!await delDoc(dbCol,u.id)){sel={};dm=false;listUtenti();delFail();return}}   /* se l'utente non si elimina, restano intatti anche schede, ingressi e pacchetti */
     await dropSchedeOf(u.id);
     await dropUserFromCal(u.id);
     await dropIngOf(u.id);
@@ -732,7 +743,8 @@ async function doDelete(){
     if(caps.assets){for(var s of ['frontId','backId','certId']){if(u[s]){try{await caps.assets.delete(u[s])}catch(e){}}}}
   }
   if(!dbCol)U=U.filter(function(u){return !sel[u.id]});
-  sel={};dm=false;closeModal();listUtenti();
+  sel={};dm=false;listUtenti();
+  if(delErr)delFail();else closeModal();
 }
 document.addEventListener('change',function(e){var t=e.target;if(t.getAttribute&&t.getAttribute('data-side')&&t.files&&t.files[0]){var f=t.files[0];pickFile(t.getAttribute('data-side'),f);t.value=''}});
 document.addEventListener('click',function(e){
@@ -898,13 +910,14 @@ async function dlScheda(id){
 }
 async function doDelSchede(){
   var ids=Object.keys(ssel);
-  if(dbSch){for(var i=0;i<ids.length;i++){try{await dbSch.doc(String(ids[i])).delete()}catch(e){}}}
+  if(dbSch){for(var i=0;i<ids.length;i++){await delDoc(dbSch,ids[i])}}
   else SCH=SCH.filter(function(x){return !ssel[x.id]});
-  ssel={};sdm=false;closeModal();listSchede();drawTrend();
+  ssel={};sdm=false;listSchede();drawTrend();
+  if(delErr)delFail();else closeModal();
 }
 async function dropSchedeOf(id){
   var L=schedeOf(id);
-  if(dbSch){for(var i=0;i<L.length;i++){try{await dbSch.doc(String(L[i].id)).delete()}catch(e){}}}
+  if(dbSch){for(var i=0;i<L.length;i++){await delDoc(dbSch,L[i].id)}}
   else SCH=SCH.filter(function(x){return String(x.uid)!==String(id)});
 }
 function refreshSchede(){
@@ -1161,7 +1174,7 @@ async function saveCalForm(){
   }catch(err){b.disabled=false;b.textContent='Salva';st('c_st','Salvataggio non riuscito. Riprova.')}
 }
 async function delCal(id){
-  if(dbCal){try{await dbCal.doc(String(id)).delete()}catch(e){}}
+  if(dbCal){if(!await delDoc(dbCal,id)){delFail();return}}
   CAL=CAL.filter(function(x){return String(x.id)!==String(id)});
   closeModal();drawCal();
 }
@@ -1423,14 +1436,16 @@ async function saveIng(id){
     closeModal();listIng();
   }catch(err){b.disabled=false;b.textContent='Salva';st('i_st','Salvataggio non riuscito. Riprova.')}
 }
-async function delIng(ids){
-  for(var i=0;i<ids.length;i++){if(dbIng){try{await dbIng.doc(String(ids[i])).delete()}catch(e){}}}
-  ING=ING.filter(function(x){return ids.indexOf(String(x.id))<0});
-  isel={};idm=false;closeModal();listIng();
+async function delIng(ids,quiet){
+  var ok=[];
+  for(var i=0;i<ids.length;i++){if(!dbIng||await delDoc(dbIng,ids[i]))ok.push(String(ids[i]))}
+  ING=ING.filter(function(x){return ok.indexOf(String(x.id))<0});
+  isel={};idm=false;listIng();
+  if(delErr&&!quiet)delFail();else if(!quiet)closeModal();
 }
 async function dropIngOf(id){
   var ids=regOf(id).map(function(x){return String(x.id)});
-  if(ids.length)await delIng(ids);
+  if(ids.length)await delIng(ids,true);
 }
 // ---- pacchetti ----
 function pkRest(){
@@ -1502,9 +1517,9 @@ async function lezioneDelta(d){
   finally{lzBusy=false}
 }
 async function delPac(id){
+  if(dbPac){if(!await delDoc(dbPac,id)){delFail();return}}     /* prima il pacchetto: se non si elimina, gli ingressi restano collegati */
   var linked=ING.filter(function(x){return String(x.pid)===String(id)});
   for(var i=0;i<linked.length;i++){linked[i].pid='';if(dbIng){try{await dbIng.doc(String(linked[i].id)).update({pid:''})}catch(e){}}}
-  if(dbPac){try{await dbPac.doc(String(id)).delete()}catch(e){}}
   PAC=PAC.filter(function(x){return String(x.id)!==String(id)});
   closeModal();listIng();
 }
@@ -1512,7 +1527,7 @@ async function dropUserFromPac(id){
   var sid=String(id),L=PAC.filter(function(p){return (p.uids||[]).indexOf(sid)>-1});
   for(var i=0;i<L.length;i++){
     var p=L[i],rest=p.uids.filter(function(x){return x!==sid});
-    if(!rest.length){if(dbPac){try{await dbPac.doc(String(p.id)).delete()}catch(e){}}PAC=PAC.filter(function(x){return x!==p})}
+    if(!rest.length){if(!dbPac||await delDoc(dbPac,p.id))PAC=PAC.filter(function(x){return x!==p})}
     else{p.uids=rest;if(dbPac){try{await dbPac.doc(String(p.id)).update({uids:rest})}catch(e){}}}
   }
 }
@@ -1793,10 +1808,11 @@ async function delEv(ids){
   for(var i=0;i<ids.length;i++){
     var e=findE(ids[i]);if(!e)continue;
     if(caps.assets){for(var j=0;j<(e.files||[]).length;j++){if(e.files[j].id){try{await caps.assets.delete(e.files[j].id)}catch(x){}}}}
-    if(dbEvt){try{await dbEvt.doc(String(e.id)).delete()}catch(x){}}
+    if(dbEvt){if(!await delDoc(dbEvt,e.id))continue}
   }
-  EVT=EVT.filter(function(x){return ids.indexOf(String(x.id))<0});
-  esel={};evm=false;closeModal();listEv();
+  if(!dbEvt||!delErr)EVT=EVT.filter(function(x){return ids.indexOf(String(x.id))<0});
+  esel={};evm=false;listEv();
+  if(delErr)delFail();else closeModal();
 }
 document.addEventListener('input',function(e){if(e.target.id==='evsearch'){evq=e.target.value;listEv()}});
 document.addEventListener('change',function(e){

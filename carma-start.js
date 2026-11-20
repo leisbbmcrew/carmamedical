@@ -6,6 +6,7 @@ import {getAuth,signInWithEmailAndPassword,signOut} from "https://www.gstatic.co
 import {getDoc,doc as sdkDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {firebaseConfig} from "./firebase-config.js";
 import {getFirestore,collection,doc,onSnapshot,addDoc,setDoc,updateDoc,deleteDoc} from "./fsx.js";
+import {assicuraCoppia} from "./cifra.js";
 import {tgConfigured,hasSession,clearSession,loadTg,newClient,tgLogin,tgErrText,withTimeout,consoleLog,libSource,shimError} from "./telegram.js";
 
 const app=initializeApp(firebaseConfig),auth=getAuth(app),fdb=getFirestore(app);
@@ -137,6 +138,8 @@ window.CARMA={get chi(){return chi||(auth.currentUser&&auth.currentUser.email)||
 (async()=>{
   try{
     await accessoFirebase();
+    /* Cestino e Storico hanno bisogno della loro coppia di chiavi: senza, ogni eliminazione viene fermata. Si crea una volta sola. */
+    await Promise.all(['cestino','storico'].map(k=>assicuraCoppia(k).catch(e=>console.warn('Chiavi '+k+':',e&&e.message))));
     await accessoTelegram();
     ov.remove();
     window.__carmaResolve(creaDb());
