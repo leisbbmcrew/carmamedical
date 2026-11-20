@@ -469,8 +469,8 @@ function sampleMsg(){
         if(cur==='utenti' && document.getElementById('ulist')) listUtenti();
         refreshSchede();refreshCal();refreshIng();autoIng();
       }, function(){});
-    }
-  }catch(e){}
+    }else{dbFail=true;refreshIng()}
+  }catch(e){dbFail=true;try{refreshIng()}catch(e2){}}
 })();
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function fdate(s){if(!s)return '—';var p=s.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s}
@@ -1287,6 +1287,7 @@ document.addEventListener('click',function(e){
 // Pacchetto: {id, tot:numero di lezioni, data:acquisto, note, uids:[utenti che lo condividono], ts}
 // Ingresso:  {id, uid, day, ent, usc, note, pid:pacchetto da cui scala la lezione ('' = nessuno)}
 var SOGLIA=3;
+var dbExpected=!!(window.claude&&window.claude.use), dbFail=false;   /* con un database collegato, i dati veri arrivano dopo: fino ad allora non si mostrano avvisi (prima comparivano quelli dei pacchetti di prova) */
 var PAC=[], ING=[], dbIng=null, dbPac=null, iuid=null, idm=false, isel={}, iid=0, psel={}, pkid=null;
 (function(){
   var t=new Date();
@@ -1306,8 +1307,9 @@ function restUser(u){return pacOf(u).reduce(function(s,p){return s+restOf(p)},0)
 function autoPid(u){var p=pacOf(u).filter(function(p){return restOf(p)>0})[0];return p?String(p.id):''}
 function uname(u){return u.n+' '+u.c}
 // pacchetti con al massimo SOGLIA lezioni rimaste, se qualcuno di chi li usa non ne ha già uno più recente
+function alertsReady(){return !dbExpected||dbFail||!!(rdy.pac&&rdy.ing&&rdy.u)}
 function alerts(){
-  var out=[];
+  var out=[];if(!alertsReady())return out;
   PAC.forEach(function(p){
     var r=restOf(p);if(r>SOGLIA)return;
     var us=(p.uids||[]).map(function(i){return find(i)}).filter(Boolean);if(!us.length)return;
