@@ -85,3 +85,13 @@ img,svg,video,canvas{max-width:100%}
 .subnav a{flex:1;max-width:200px;text-align:center;padding:8px 6px;border:1px solid var(--ln);border-radius:10px;color:var(--mu);text-decoration:none;font-size:.9rem}
 .subnav a[aria-current="page"]{background:var(--ac);border-color:var(--ac);color:var(--bg);font-weight:700}
 body.hasnav{padding-bottom:140px}
+
+/* ---- armonizzazione con l'app ---- */
+.card{border-radius:18px;padding:18px}
+.btn{border-radius:12px;padding:10px 16px}.btn.sm{padding:6px 12px}
+input[type=text],input[type=password],input[type=search],input[type=date],input[type=number],input[type=email],select,textarea{border-radius:12px;padding:10px 12px}
+h2{font-size:1.35rem}
+.top{background:var(--sf)}
+.fn b,.nm,.rw .inf b,.row b,.frow b,.tile b,.card h2,.card h1{overflow-wrap:anywhere;min-width:0}
+.fn{min-width:0;text-align:left}
+.badge{display:inline-block;margin-left:6px}

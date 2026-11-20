@@ -292,6 +292,38 @@ iframe.dview{height:62vh}
 .lbox input{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text);font:inherit}
 .lbox button{padding:12px;border:none;border-radius:12px;background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer}
 
+/* ---- armonizzazione grafica: un solo carattere, niente testi fuori dai riquadri, barra in basso sempre sopra ---- */
+button,input,select,textarea{font-family:inherit}
+.pb,.ab,.mrow button,.preview button,.dbar button,.avn,.lkb,.xr{font-family:inherit}
+.pb{font-size:14px;font-weight:500;line-height:1.2}
+.tabbar{z-index:50}
+.modal{z-index:60}
+.tab span,.side button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;min-width:0}
+header>div{min-width:0}
+header h1,header small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+h2,h3,.cells b,.cells span,.urow b,.avn,.dbar span,.card h3,.card p,.mbox h3,.status,.sub{overflow-wrap:anywhere}
+.cells span{text-overflow:clip}
+.dlh h3,.ih{min-width:0}
+.mbox label{min-width:0}
+.mbox input,.mbox select,.mbox textarea{max-width:100%;min-width:0}
+.mbox input[type=checkbox]{width:auto}
+.exr{grid-template-columns:34px 1fr 1fr 1fr 32px;row-gap:6px}
+.exr .lkb{grid-column:1;grid-row:1}
+.exr .ex_n{grid-column:2/5;grid-row:1}
+.exr .xr{grid-column:5;grid-row:1}
+.exr .ex_s{grid-column:2;grid-row:2}
+.exr .ex_r{grid-column:3;grid-row:2}
+.exr .ex_k{grid-column:4;grid-row:2}
+.exr.grp{margin-left:0}
+.stage.mobile .grid{grid-template-columns:1fr 1fr;gap:10px}
+.stage.mobile .card{padding:14px;gap:8px;border-radius:16px}
+.stage.mobile .card h3{font-size:16px}
+.stage.mobile .card p{font-size:13px}
+.stage.mobile .card .ic{width:38px;height:38px}
+.stage.mobile .card .stat{font-size:12px}
+.stage.tablet .side button span{white-space:nowrap}
+.tab{font-size:10px;padding:6px 1px;letter-spacing:-.1px}
+.tab svg{width:22px;height:22px}
 </style>
 <script src="tema.js"></script>
 </head>
@@ -345,11 +377,11 @@ var I = {
 };
 var S = [
   {id:'utenti',t:'Utenti',d:'Iscritti, anagrafica e abbonamenti',i:I.users,c:'var(--c1)',s:'Gestisci iscritti'},
-  {id:'schede',t:'Schede allenamento',d:'Crea e assegna programmi di allenamento',i:I.plan,c:'var(--c2)',s:'Gestisci schede'},
+  {id:'avvisi',t:'Avvisi',d:'Ingressi in esaurimento e rinnovi',i:I.bell,c:'#dc2626',s:'Apri avvisi'},
   {id:'calendario',t:'Calendario',d:'Corsi, appuntamenti e prenotazioni',i:I.cal,c:'var(--c3)',s:'Apri calendario'},
+  {id:'schede',t:'Schede',d:'Programmi di allenamento',i:I.plan,c:'var(--c2)',s:'Gestisci schede'},
   {id:'eventi',t:'Eventi',d:'Open day, workshop e iniziative',i:I.ev,c:'var(--c4)',s:'Gestisci eventi'},
-  {id:'documenti',t:'Documenti',d:'Documenti, archivio e cestino',i:I.doc,c:'var(--c3)',s:'Apri documenti'},
-  {id:'avvisi',t:'Avvisi',d:'Ingressi in esaurimento e rinnovi',i:I.bell,c:'#dc2626',s:'Apri avvisi'}
+  {id:'documenti',t:'Documenti',d:'Documenti, archivio e cestino',i:I.doc,c:'#0e7490',s:'Apri documenti'}
 ];
 var cur = 'home';
 function render(){
@@ -374,7 +406,7 @@ function render(){
   if (cur === 'calendario') renderCal();
   var items = [{id:'home',t:'Home',i:I.home}].concat(S.map(function(x){return {id:x.id,t:x.id==='schede'?'Schede':x.t,i:x.i}}));
   document.getElementById('tabbar').innerHTML = items.map(function(x){return '<button class="tab" data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+x.t+'</span>'+bdgHtml(x.id)+'</button>'}).join('');
-  document.getElementById('side').innerHTML = items.map(function(x){var f=x.id==='schede'?'Schede allenamento':x.t;return '<button data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+f+'</span>'+bdgHtml(x.id)+'</button>'}).join('');
+  document.getElementById('side').innerHTML = items.map(function(x){var f=x.id==='schede'?'Schede':x.t;return '<button data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+f+'</span>'+bdgHtml(x.id)+'</button>'}).join('');
 }
 document.addEventListener('keydown', function(e){
   if ((e.key==='Enter'||e.key===' ') && e.target.id==='logoTema') { e.preventDefault(); location.href = 'tema.html'; }
@@ -736,7 +768,7 @@ function exNames(u){var m={};schedeOf(u).forEach(function(sc){sc.es.forEach(func
 function renderSchede(){
   var m=document.getElementById('main');
   if(!suid){
-    m.innerHTML='<h2>Schede allenamento</h2><p class="sub" id="sucount"></p><input class="search" id="ssearch" type="search" placeholder="Cerca utente…" value="'+esc(sq)+'"><div id="sulist"></div>';
+    m.innerHTML='<h2>Schede</h2><p class="sub" id="sucount"></p><input class="search" id="ssearch" type="search" placeholder="Cerca utente…" value="'+esc(sq)+'"><div id="sulist"></div>';
     listSU();return;
   }
   var u=find(suid); if(!u){suid=null;renderSchede();return}
