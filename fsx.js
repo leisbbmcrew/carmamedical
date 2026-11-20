@@ -201,10 +201,10 @@ export function migraInSospeso(){
       let sn;try{sn=await SDK.getDocs(SDK.collection(DB,'sections',sec,'items'))}catch(e){continue}
       for(const d of sn.docs){
         const x=d.data()||{},p=x._pend;if(!p)continue;
-        const y={...x};delete y._pend;
+        const y={...x};delete y._pend;delete y._by;delete y._byN;delete y._at;
         const ref=tgRef(DB,sec,'items',d.id),r=recOf(sec,d.id),esiste=!!r&&!r.x;
         try{
-          if(p==='del'){if(esiste)await delOnline(ref)}
+          if(p==='del'){if(esiste)await delOnline(ref,x._by?{attore:{uid:x._by,nome:x._byN||'',t:x._at||Date.now()}}:undefined)}
           else if(p==='upd'&&esiste)await write(ref,'upd',ser(y),true);
           else await write(ref,'set',ser(y),true);
           await SDK.deleteDoc(d.ref);n++}
@@ -262,7 +262,7 @@ function offSnap(ref,s){
   for(const d of s.docs){
     const x=d.data()||{},p=x._pend;
     if(p==='del'){m.delete(d.id);continue}
-    const y={...x};delete y._pend;
+    const y={...x};delete y._pend;delete y._by;delete y._byN;delete y._at;
     if(p==='upd')m.set(d.id,{...(m.get(d.id)||{}),...y});
     else if(p==='set'||!m.has(d.id))m.set(d.id,y)}
   const docs=[...m].map(([id,v])=>({id,exists:()=>true,data:()=>v}));
@@ -281,7 +281,7 @@ async function offAdd(col,data){pendNote=true;const id=newId();await SDK.setDoc(
 async function offSetDoc(ref,data,opts){pendNote=true;if(opts&&opts.merge)return offUpd(ref,data);return SDK.setDoc(offRef(ref),{...toSdk(data),_pend:'set'})}
 async function offDel(ref){pendNote=true;const ex=await offGet(ref);
   if(ex&&ex._pend==='set')await SDK.deleteDoc(offRef(ref));          /* creato senza Telegram e mai trasferito: basta toglierlo */
-  else await SDK.setDoc(offRef(ref),{_pend:'del'})}
+  else{const u=await utente();await SDK.setDoc(offRef(ref),{_pend:'del',_by:u.uid,_byN:u.nome,_at:Date.now()})}}      /* si ricorda CHI ha eliminato e QUANDO: chi collega Telegram dopo non diventa l'autore */
 async function offUpd(ref,patch){pendNote=true;const ex=await offGet(ref);
   await SDK.setDoc(offRef(ref),{...toSdk(patch),_pend:ex&&ex._pend==='set'?'set':'upd'},{merge:true})}
 export async function getDocs(ref){
@@ -359,11 +359,11 @@ async function utente(){
     uCache={uid:u.uid,p};return p}catch(e){return {uid:'?',nome:''}}}
 let logQ=Promise.resolve();
 /* azione: crea, modifica, elimina, ripristina, accesso, account, backup… Non blocca mai l'operazione: se lo storico non è pronto, la voce si perde. */
-export function logEvento(azione,sec,id,titolo,dett){
+export function logEvento(azione,sec,id,titolo,dett,attore){
   if(!CIFRA_ATTIVA||sec==='storico')return;
   logQ=logQ.then(async()=>{
-    const u=await utente();
-    const voce={t:Date.now(),u:u.uid,n:u.nome,a:azione,s:sec||'',i:id||'',T:String(titolo||'').slice(0,160),c:String(dett||'').slice(0,300)};
+    const u=attore?{uid:attore.uid,nome:attore.nome}:await utente();
+    const voce={t:attore&&attore.t||Date.now(),u:u.uid,n:u.nome,a:azione,s:sec||'',i:id||'',T:String(titolo||'').slice(0,160),c:String(dett||'').slice(0,300)};
     /* chi ha la sessione Telegram scrive subito nello Storico; tutti gli altri (atleti, tecnici, operatori) accodano la voce su Firestore, cifrata: la porta nello Storico l'admin alla prossima apertura */
     if(tgConfigured()&&hasSession()){try{await tgSendSicuro('storico',newId(),'set',voce);return}catch(e){console.warn('Storico su Telegram non scritto, uso la coda:',e&&e.message)}}
     const u2=getAuth(DB.app).currentUser;if(!u2)return;
@@ -385,12 +385,12 @@ const loggabile=ref=>ref.coll==='items'&&ref.S!=='storico'&&ref.S!=='cestino'&&r
 
 /* ---------- Cestino: ogni elemento eliminato viene prima copiato in "cestino" (e il file resta su Telegram) ---------- */
 let lotto={id:'',t:0,u:''};
-async function nelCestino(ref,r){
-  const u=await utente(),now=Date.now();
-  if(now-lotto.t>8000||lotto.u!==u.uid)lotto={id:newId(),t:now,u:u.uid};else lotto.t=now;      /* eliminati insieme = stesso lotto */
+async function nelCestino(ref,r,attore){
+  const u=attore?{uid:attore.uid,nome:attore.nome}:await utente(),now=attore&&attore.t||Date.now();
+  if(Math.abs(now-lotto.t)>8000||lotto.u!==u.uid)lotto={id:newId(),t:now,u:u.uid};else lotto.t=now;      /* eliminati insieme = stesso lotto */
   const st=clone(r.st);
   await write(tgRef(DB,'cestino','items',newId()),'set',{sec:ref.S,id:ref.id,titolo:titoloDi(st,ref.id),kind:st.kind||'',dati:st,
-    tg:st.tg||0,chunks:st.chunks||0,fbc:!!st.fb,da:u.uid,daNome:u.nome,il:{$ts:now},lotto:lotto.id},true);lotto.t=Date.now()}
+    tg:st.tg||0,chunks:st.chunks||0,fbc:!!st.fb,da:u.uid,daNome:u.nome,il:{$ts:now},lotto:lotto.id},true);lotto.t=attore?now:Date.now()}
 
 export async function addDoc(col,data){
   if(!col||!col.__tg)return SDK.addDoc(col,toSdk(data));
@@ -426,12 +426,12 @@ export async function deleteDoc(ref,opts){
 async function delOnline(ref,opts){
   await startOnce();
   const r=recOf(ref.sec,ref.id);if(protetto(r))throw errProt();
-  const titolo=titoloDi(r&&r.st,ref.id),daCestino=loggabile(ref)&&r&&!r.x&&!(opts&&opts.definitivo);
+  const attore=opts&&opts.attore,titolo=titoloDi(r&&r.st,ref.id),daCestino=loggabile(ref)&&r&&!r.x&&!(opts&&opts.definitivo);
   if(daCestino){
     /* se il Cestino non è pronto (chiave pubblica mancante) si ferma: meglio non eliminare che perdere il dato */
-    try{await nelCestino(ref,r)}catch(e){console.error(e);const x=new Error(e&&e.message==='NOPUB'?'NOPUB':'CESTINO');x.code='failed-precondition';throw x}}
+    try{await nelCestino(ref,r,attore)}catch(e){console.error(e);const x=new Error(e&&e.message==='NOPUB'?'NOPUB':'CESTINO');x.code='failed-precondition';throw x}}
   await write(ref,'del',{});
-  if(loggabile(ref))logEvento('elimina',ref.S,ref.id,titolo,daCestino?'spostato nel Cestino':'definitivo')}
+  if(loggabile(ref))logEvento('elimina',ref.S,ref.id,titolo,(daCestino?'spostato nel Cestino':'definitivo')+(attore?' (eliminato senza Telegram)':''),attore)}
 /* Rimette al suo posto un elemento del Cestino (stesso id, stessa sezione) e toglie la voce dal Cestino. Se esiste già un elemento con quell'id si ferma. */
 export async function ripristinaVoce(entryId,patch){
   await startOnce();
