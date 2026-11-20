@@ -189,7 +189,7 @@ function startOnce(){
   startP.then(()=>{if(hasSession()&&!tgDown)migraInSospeso().catch(()=>{})},()=>{});
   return startP}
 /* ---------- trasferimento automatico: ciò che è stato salvato senza Telegram passa sul registro appena c'è la sessione ---------- */
-const SEZ_MIGRA=['utenti','schede','calendario','ingressi','pacchetti','eventi'];
+const SEZ_MIGRA=['utenti','schede','calendario','ingressi','pacchetti','eventi','documenti'];
 let migrando=null;
 export function migraInSospeso(){
   if(migrando)return migrando;

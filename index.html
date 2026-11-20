@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Carma Medical Wellness</title>
 <style>
-:root{--bg:#f3f7f6;--surface:#fff;--text:#12302b;--muted:#5d7872;--line:#dbe6e3;--brand:#0f766e;--brand-soft:#d9f0ec;--c1:#0f766e;--c2:#c2410c;--c3:#1d4ed8;--c4:#7e22ce;
+:root{--bg:#f3f7f6;--surface:var(--sf,#fff);--text:var(--tx,#12302b);--muted:var(--mu,#5d7872);--line:var(--ln,#dbe6e3);--brand:var(--ac,#0f766e);--brand-soft:color-mix(in srgb,var(--ac,#0f766e) 14%,var(--sf,#fff));--c1:#0f766e;--c2:#c2410c;--c3:#1d4ed8;--c4:#7e22ce;
 color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a18;--surface:#152724;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0d1a18;--surface:#152724;--text:#e6f2ef;--muted:#92b0aa;--line:#24403b;--brand:#2dd4bf;--brand-soft:#173833;--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1a18;--surface:var(--sf,#152724);--text:var(--tx,#e6f2ef);--muted:var(--mu,#92b0aa);--line:var(--ln,#24403b);--brand:var(--ac,#2dd4bf);--brand-soft:color-mix(in srgb,var(--ac,#2dd4bf) 14%,var(--sf,#152724));--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1a18;--surface:var(--sf,#152724);--text:var(--tx,#e6f2ef);--muted:var(--mu,#92b0aa);--line:var(--ln,#24403b);--brand:var(--ac,#2dd4bf);--brand-soft:color-mix(in srgb,var(--ac,#2dd4bf) 14%,var(--sf,#152724));--c1:#2dd4bf;--c2:#fb923c;--c3:#60a5fa;--c4:#c084fc;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -39,7 +39,7 @@ h2{font-size:22px;margin:0 0 4px}
 .panel{background:var(--surface);border:1px dashed var(--line);border-radius:18px;padding:28px;text-align:center;color:var(--muted)}
 .back{background:none;border:none;color:var(--brand);font:inherit;cursor:pointer;padding:0 0 12px}
 .tabbar{position:sticky;bottom:0;display:flex;background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted);font:inherit;font-size:12px;padding:6px 2px;cursor:pointer}
+.tab{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted);font:inherit;font-size:11px;padding:6px 2px;cursor:pointer}
 .tab[aria-current="true"]{color:var(--brand);font-weight:600}
 .stage.tablet nav.side{display:flex;flex-direction:column;gap:4px;width:220px;padding:16px 12px;background:var(--surface);border-right:1px solid var(--line)}
 .stage.tablet .side button{display:flex;align-items:center;gap:12px;background:none;border:none;color:var(--muted);font:inherit;padding:12px 14px;border-radius:12px;cursor:pointer;text-align:left}
@@ -293,6 +293,7 @@ iframe.dview{height:62vh}
 .lbox button{padding:12px;border:none;border-radius:12px;background:var(--brand);color:#fff;font:inherit;font-weight:600;cursor:pointer}
 
 </style>
+<script src="tema.js"></script>
 </head>
 <body>
 <div class="preview" role="group" aria-label="Anteprima">
@@ -311,7 +312,7 @@ iframe.dview{height:62vh}
     </div>
   </div>
   <header>
-    <div class="logo">C</div>
+    <div class="logo" id="logoTema" role="button" tabindex="0" title="Temi" aria-label="Apri i temi" style="cursor:pointer">C</div>
     <div><h1>Carma Medical Wellness</h1><small>Gestione palestra</small></div>
   </header>
   <div class="layout">
@@ -337,6 +338,9 @@ var I = {
   plan:'<svg viewBox="0 0 24 24"><path d="M2 9v6M5 6v12M19 6v12M22 9v6M5 12h14"/></svg>',
   cal:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   ev:'<svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>',
+  doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8zM14 3v5h5M9 13h6M9 17h6"/></svg>',
+  bin:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>',
+  arc:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9M10 13h4"/></svg>',
   bell:'<svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0112 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9zM10 20a2 2 0 004 0"/></svg>'
 };
 var S = [
@@ -344,6 +348,7 @@ var S = [
   {id:'schede',t:'Schede allenamento',d:'Crea e assegna programmi di allenamento',i:I.plan,c:'var(--c2)',s:'Gestisci schede'},
   {id:'calendario',t:'Calendario',d:'Corsi, appuntamenti e prenotazioni',i:I.cal,c:'var(--c3)',s:'Apri calendario'},
   {id:'eventi',t:'Eventi',d:'Open day, workshop e iniziative',i:I.ev,c:'var(--c4)',s:'Gestisci eventi'},
+  {id:'documenti',t:'Documenti',d:'Documenti, archivio e cestino',i:I.doc,c:'var(--c3)',s:'Apri documenti'},
   {id:'avvisi',t:'Avvisi',d:'Ingressi in esaurimento e rinnovi',i:I.bell,c:'#dc2626',s:'Apri avvisi'}
 ];
 var cur = 'home';
@@ -354,7 +359,12 @@ function render(){
       S.map(function(x){return '<button class="card" style="--col:'+x.c+'" data-go="'+x.id+'"><div class="ic">'+x.i+'</div><h3>'+x.t+'</h3><p>'+x.d+'</p><span class="stat">'+(x.id==='avvisi'?avvStat():x.id==='eventi'?evStat():x.s)+' →</span></button>'}).join('') + '</div>';
   } else {
     var x = S.filter(function(y){return y.id===cur})[0];
-    h = '<button class="back" data-go="home">← Home</button><h2>'+x.t+'</h2><p class="sub">'+x.d+'</p><div class="panel">Sezione in sviluppo.</div>';
+    if (cur === 'documenti') {
+      var DS = [{h:'documenti.html',t:'Documenti',d:'Cartelle e file della palestra',i:I.doc,c:'var(--c3)'},{h:'archivio.html',t:'Archivio',d:'Documenti scaduti e conservati',i:I.arc,c:'var(--c1)'},{h:'cestino.html',t:'Cestino',d:'Elementi eliminati, da ripristinare',i:I.bin,c:'#dc2626'}];
+      h = '<button class="back" data-go="home">← Home</button><h2>'+x.t+'</h2><p class="sub">Scegli una sottosezione.</p><div class="grid">'+DS.map(function(y){return '<a class="card" href="'+y.h+'" style="--col:'+y.c+';text-decoration:none"><div class="ic">'+y.i+'</div><h3>'+y.t+'</h3><p>'+y.d+'</p><span class="stat">Apri →</span></a>'}).join('')+'</div>';
+    } else {
+      h = '<button class="back" data-go="home">← Home</button><h2>'+x.t+'</h2><p class="sub">'+x.d+'</p><div class="panel">Sezione in sviluppo.</div>';
+    }
   }
   m.innerHTML = h;
   if (cur === 'utenti') renderUtenti();
@@ -366,7 +376,11 @@ function render(){
   document.getElementById('tabbar').innerHTML = items.map(function(x){return '<button class="tab" data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+x.t+'</span>'+bdgHtml(x.id)+'</button>'}).join('');
   document.getElementById('side').innerHTML = items.map(function(x){var f=x.id==='schede'?'Schede allenamento':x.t;return '<button data-go="'+x.id+'"'+(x.id===cur?' aria-current="true"':'')+'>'+x.i+'<span>'+f+'</span>'+bdgHtml(x.id)+'</button>'}).join('');
 }
+document.addEventListener('keydown', function(e){
+  if ((e.key==='Enter'||e.key===' ') && e.target.id==='logoTema') { e.preventDefault(); location.href = 'tema.html'; }
+});
 document.addEventListener('click', function(e){
+  if (e.target.closest('#logoTema')) { location.href = 'tema.html'; return; }
   var b = e.target.closest('[data-go]'); if (b) { cur = b.getAttribute('data-go'); iuid = null; render(); window.scrollTo(0,0); }
 });
 function setView(v){

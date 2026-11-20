@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cestino – Carma Medical Wellness</title>
+<link rel="stylesheet" href="stile.css">
+<style>
+.hd{display:flex;gap:6px 12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;min-width:0}
+.flt{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px;align-items:center}
+.flt select{width:auto;min-height:42px}
+.flt input[type=search]{flex:1;min-width:150px;min-height:42px}
+.rw{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--ln)}
+.rw:last-child{border:0}
+.rw .inf{flex:1;min-width:0;line-height:1.35}
+.rw .inf b{overflow-wrap:anywhere}
+.rw .ac{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:560px){.rw{flex-wrap:wrap}.rw .ac{width:100%;justify-content:flex-start}}
+.chip{font-size:.72rem;padding:2px 8px;border-radius:99px;border:1px solid var(--ln);white-space:nowrap;color:var(--mu);margin-left:4px}
+.chip.bad{border-color:var(--er);color:var(--er);font-weight:700}
+.emp{text-align:center;padding:28px 12px;color:var(--mu)}
+.ov{position:fixed;inset:0;background:rgba(10,16,30,.55);z-index:80;display:flex;align-items:center;justify-content:center;padding:16px}
+.dlg{max-width:440px;width:100%}
+.dact{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:14px}
+</style>
+<script src="tema.js"></script>
+<meta name="theme-color" content="#f3f7f6">
+</head>
+<body>
+<div id="app"></div>
+<div class="clock" id="clock"></div>
+<nav class="subnav" aria-label="Documenti"><a href="documenti.html" data-n="documenti">Documenti</a><a href="archivio.html" data-n="archivio">Archivio</a><a href="cestino.html" data-n="cestino">Cestino</a></nav>
+<script>(function(){var p=location.pathname.split("/").pop().replace(".html","")||"documenti";document.body.classList.add("hasnav");document.querySelectorAll(".subnav a").forEach(function(a){if(a.dataset.n===p)a.setAttribute("aria-current","page")})})()</script>
+<script type="module" src="cestino.js"></script>
+</body>
+</html>
