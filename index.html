@@ -203,7 +203,7 @@ h2{font-size:22px;margin:0 0 4px}
 .cc input{display:none}
 .cc i{display:block;width:32px;height:32px;border-radius:50%;background:var(--col);border:3px solid transparent;box-shadow:inset 0 0 0 2px var(--surface)}
 .cc input:checked+i{border-color:var(--text)}
-.cul{max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.cul{flex-shrink:0;min-height:120px;max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .mbox label.cur{flex-direction:row;align-items:center;gap:10px;font-size:14px;color:var(--text);padding:7px 10px;border-bottom:1px solid var(--line);cursor:pointer}
 .cur:last-child{border-bottom:none}
 .cul input[type=checkbox]{width:20px;height:20px;padding:0;flex-shrink:0;accent-color:var(--brand)}
@@ -236,6 +236,7 @@ h2{font-size:22px;margin:0 0 4px}
 #pk_ch{display:flex;gap:8px;margin:0}
 #pk_ch .chip{padding:8px 18px;font-size:15px}
 #pk_ch .chip.sel{border-color:var(--brand);color:var(--brand);font-weight:700}
+#pk_sel{margin:0}#pk_sel .chip.sel{border-color:var(--brand);color:var(--brand);font-weight:600}
 .alh{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
 .alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
 .alert{display:flex;align-items:center;gap:12px;text-align:left;width:100%;background:#fef3c7;border:1px solid #f59e0b;color:#78350f;border-radius:14px;padding:12px 14px;font:inherit;cursor:pointer}
@@ -1497,7 +1498,9 @@ function pkUsersHtml(){
     return '<label class="cur"><input type="checkbox" data-pu="'+esc(u.id)+'"'+(psel[String(u.id)]?' checked':'')+'><span class="av sm">'+esc((u.n[0]||'')+(u.c[0]||'')).toUpperCase()+'</span><span class="cun"><b>'+esc(u.c+' '+u.n)+'</b></span></label>';
   }).join('');
 }
-function pkRefresh(){var l=document.getElementById('pk_ul');if(l)l.innerHTML=pkUsersHtml();st('pk_uc','Utenti che condividono gli ingressi ('+Object.keys(psel).length+')')}
+function pkRefresh(){var l=document.getElementById('pk_ul');if(l)l.innerHTML=pkUsersHtml();
+  var sl=document.getElementById('pk_sel');if(sl)sl.innerHTML=U.filter(function(u){return psel[String(u.id)]}).map(function(u){return '<button type="button" class="chip sel" data-act="pk_unsel" data-id="'+esc(u.id)+'" aria-label="Togli '+esc(uname(u))+'">'+esc(uname(u))+' ×</button>'}).join('')||'<span class="status">Nessun utente selezionato.</span>';
+  st('pk_uc','Utenti che condividono gli ingressi ('+Object.keys(psel).length+')')}
 function pkForm(id){
   var p=id?findP(id):null;pkid=p?p.id:null;
   var o=p||{tot:10,data:iso(new Date()),note:'',uids:[String(iuid)]};
@@ -1506,8 +1509,9 @@ function pkForm(id){
    '<div style="font-size:13px;color:var(--muted)">Numero di lezioni</div><div class="chips" id="pk_ch">'+[10,20,30].map(function(n){return '<button type="button" class="chip" data-act="pk_n" data-n="'+n+'">'+n+'</button>'}).join('')+'</div>'+
    '<label>'+(p?'Totale lezioni del pacchetto':'Oppure un numero a scelta')+'<input id="pk_t" type="number" min="1" inputmode="numeric"></label>'+(p?'<label>Lezioni rimanenti (modificabili a mano)<input id="pk_r" type="number" min="0" inputmode="numeric"></label><div class="status">Cambiando le rimanenti si aggiorna il totale del pacchetto: ne hai già usate '+usedOf(p)+'.</div>':'')+
    '<label>Data di acquisto<input id="pk_d" type="date"></label><label>Note<input id="pk_n" type="text"></label>'+
-   '<b id="pk_uc" style="font-size:14px;margin-top:4px"></b><div class="status">Gli utenti selezionati usano le stesse lezioni del pacchetto: ogni loro ingresso ne scala una.</div>'+
-   '<input class="search" id="pk_q" type="search" placeholder="Cerca utente…" style="margin:0"><div class="cul" id="pk_ul"></div><div class="status" id="pk_st"></div>'+
+   '<b id="pk_uc" style="font-size:14px;margin-top:4px"></b>'+
+   '<input class="search" id="pk_q" type="search" placeholder="Scrivi il nome per cercare l\'utente…" autocomplete="off" style="margin:0"><div class="cul" id="pk_ul"></div>'+
+   '<div class="chips" id="pk_sel"></div><div class="status">Gli utenti selezionati usano le stesse lezioni del pacchetto: ogni loro ingresso ne scala una.</div><div class="status" id="pk_st"></div>'+
    '<div class="mrow">'+(p?'<button class="danger" data-act="pk_rm" data-id="'+esc(p.id)+'" style="margin-right:auto">Elimina</button>':'')+'<button data-act="mclose">Annulla</button><button class="pri" id="pk_sv" data-act="pk_save" data-id="'+(p?esc(p.id):'')+'">Salva</button></div>');
   document.querySelector('#modal .mbox').classList.add('wide');
   document.getElementById('pk_t').value=o.tot;document.getElementById('pk_d').value=o.data;document.getElementById('pk_n').value=o.note||'';
@@ -1573,12 +1577,13 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('change',function(e){
   var t=e.target,u=t.getAttribute&&t.getAttribute('data-pu');
-  if(u!=null&&u!==''){if(t.checked)psel[u]=1;else delete psel[u];st('pk_uc','Utenti che condividono gli ingressi ('+Object.keys(psel).length+')')}
+  if(u!=null&&u!==''){if(t.checked)psel[u]=1;else delete psel[u];pkRefresh()}
 });
 document.addEventListener('click',function(e){
   var a=e.target.closest('[data-act]');
   if(a){var k=a.getAttribute('data-act'),id=a.getAttribute('data-id');
-    if(k==='um_ana')openUser(id);
+    if(k==='pk_unsel'){delete psel[String(id)];pkRefresh()}
+    else if(k==='um_ana')openUser(id);
     else if(k==='um_edit')userForm(id);
     else if(k==='um_sch')goSchede(id);
     else if(k==='um_ing')goIng(id);
