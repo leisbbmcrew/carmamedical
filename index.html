@@ -1486,10 +1486,12 @@ function pkChips(){
   var t=document.getElementById('pk_t');if(!t)return;var v=+t.value;pkRest();
   [].forEach.call(document.querySelectorAll('#pk_ch .chip'),function(c){c.classList.toggle('sel',+c.getAttribute('data-n')===v)});
 }
+function pkNorm(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/['’`]/g,'').replace(/[^a-z0-9@.+ ]+/g,' ').replace(/\s+/g,' ').trim()}
 function pkUsersHtml(){
   if(!U.length)return '<div class="status" style="padding:10px">Nessun utente caricato.</div>';
   var qe=document.getElementById('pk_q'),q=qe?qe.value.toLowerCase().trim():'';
-  var L=U.filter(function(u){return !q||uname(u).toLowerCase().indexOf(q)>-1}).sort(function(a,b){return (a.c+a.n).localeCompare(b.c+b.n)});
+  var qs=pkNorm(q).split(' ').filter(Boolean);   /* parole in qualsiasi ordine, senza maiuscole/accenti: "rossi mario" trova anche Mario Rossi */
+  var L=U.filter(function(u){var h=pkNorm(u.n+' '+u.c+' '+(u.cf||'')+' '+(u.e||'')+' '+(u.t||''));return qs.every(function(w){return h.indexOf(w)>-1})}).sort(function(a,b){return (a.c+a.n).localeCompare(b.c+b.n)});
   if(!L.length)return '<div class="status" style="padding:10px">Nessun utente trovato.</div>';
   return L.map(function(u){
     return '<label class="cur"><input type="checkbox" data-pu="'+esc(u.id)+'"'+(psel[String(u.id)]?' checked':'')+'><span class="av sm">'+esc((u.n[0]||'')+(u.c[0]||'')).toUpperCase()+'</span><span class="cun"><b>'+esc(u.c+' '+u.n)+'</b></span></label>';
