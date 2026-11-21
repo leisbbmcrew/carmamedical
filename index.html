@@ -153,6 +153,8 @@ h2{font-size:22px;margin:0 0 4px}
 .ev{position:absolute;z-index:2;cursor:pointer;-webkit-touch-callout:none}
 .evb{height:100%;overflow:hidden;border-radius:7px;border-left:4px solid var(--col);background:color-mix(in srgb,var(--col) 20%,var(--surface));padding:3px 6px;color:var(--text)}
 .ev.acc .evb{background:color-mix(in srgb,var(--col) 10%,var(--surface));border-left-style:dotted}
+.ev.evn .evb{background:color-mix(in srgb,var(--col) 34%,var(--surface));border-left-width:7px}
+.ev.evn .evb b::before{content:"★ "}
 .evb b{display:block;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .evb span{display:block;font-size:11px;line-height:1.25;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev.md .evu{display:none}
@@ -981,7 +983,7 @@ document.addEventListener('click',function(e){
   if(sr){var id=sr.getAttribute('data-srow');if(sdm){if(ssel[id])delete ssel[id];else ssel[id]=1;listSchede()}else viewScheda(id)}
 });
 // ---- Calendario: giorno / settimana / mese / anno, timeline, spostamento con il dito, utenti assegnati alle fasce orarie ----
-// Ogni voce: {id, t:titolo, k:'lezione'|'accesso', day:'AAAA-MM-GG', s:inizio in minuti, e:fine in minuti, c:colore 0-3, note, u:[id utenti]}
+// Ogni voce: {id, t:titolo, k:'lezione'|'evento'|'accesso', day:'AAAA-MM-GG', s:inizio in minuti, e:fine in minuti, c:colore 0-3, note, u:[id utenti]}
 // Più utenti possono essere assegnati alla stessa fascia, e più voci possono sovrapporsi.
 var MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
 var MESI3=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
@@ -1094,7 +1096,7 @@ function layoutDay(L){
 }
 function evHtml(it,lay){
   var us=usersOf(it),top=it.s/60*HH,h=Math.max(18,(it.e-it.s)/60*HH-1),ln=lay[it.id]||{c:0,n:1};
-  var cls='ev'+(it.k==='accesso'?' acc':'')+(h<34?' sm':h<52?' md':'');
+  var cls='ev'+(it.k==='accesso'?' acc':it.k==='evento'?' evn':'')+(h<34?' sm':h<52?' md':'');
   return '<div class="'+cls+'" data-ci="'+esc(it.id)+'" style="top:'+top+'px;height:'+h+'px;left:calc('+(ln.c*100/ln.n)+'% + 1px);width:calc('+(100/ln.n)+'% - 3px);--col:'+CCOL[it.c||0]+'">'+
    '<div class="evb"><b>'+esc(ctitle(it))+'</b><span class="evt">'+hm(it.s)+'–'+hm(it.e)+'</span>'+
    (us.length?'<span class="evu">'+us.length+(us.length===1?' utente: ':' utenti: ')+esc(us.map(function(u){return u.c}).join(', '))+'</span>':'')+'</div><i class="rh"></i></div>';
@@ -1171,29 +1173,37 @@ function calForm(id,pre){
   var o=it||Object.assign({k:'lezione',t:'',day:iso(calD),s:540,e:600,c:2,note:'',u:[]},pre||{});
   fsel={};(o.u||[]).forEach(function(x){fsel[String(x)]=1});
   modal('<h3>'+(it?'Modifica voce':'Nuova voce')+'</h3>'+
-   '<label>Tipo<select id="c_k"><option value="lezione">Lezione / evento</option><option value="accesso">Accesso libero in palestra</option></select></label>'+
+   '<label>Tipo<select id="c_k"><option value="lezione">Lezione</option><option value="evento">Evento</option><option value="accesso">Accesso libero in palestra</option></select></label>'+
    '<label>Titolo<input id="c_t" type="text" placeholder="es. Yoga, Spinning…"></label>'+
    '<label>Data<input id="c_d" type="date"></label>'+
    '<div class="frow"><label>Inizio<input id="c_s" type="time" step="900"></label><label>Fine<input id="c_e" type="time" step="900"></label></div>'+
    '<div><div style="font-size:13px;color:var(--muted)">Colore</div><div class="crow">'+CCOL.map(function(c,i){return '<label class="cc" style="--col:'+c+'"><input type="radio" name="c_c" value="'+i+'"><i></i></label>'}).join('')+'</div></div>'+
    '<label>Note<input id="c_n" type="text"></label>'+
-   '<b id="c_uc" style="font-size:14px;margin-top:4px"></b>'+
-   '<input class="search" id="c_q" type="search" placeholder="Cerca utente…" style="margin:0"><div class="cul" id="c_ul"></div>'+
+   '<label id="c_slbox" style="flex-direction:row;align-items:center;gap:8px;font-size:14px;color:var(--text);display:none"><input type="checkbox" id="c_sl"> Scala una lezione ai partecipanti</label>'+
+   '<div id="c_ubox" style="display:flex;flex-direction:column;gap:8px"><b id="c_uc" style="font-size:14px;margin-top:4px"></b>'+
+   '<input class="search" id="c_q" type="search" placeholder="Cerca utente…" style="margin:0"><div class="cul" id="c_ul"></div></div>'+
    '<div class="status" id="c_st"></div>'+
    '<div class="mrow">'+(it?'<button class="danger" data-act="c_del" data-id="'+esc(it.id)+'" style="margin-right:auto">Elimina</button>':'')+'<button data-act="mclose">Annulla</button><button class="pri" id="c_sv" data-act="c_save">Salva</button></div>');
   document.querySelector('#modal .mbox').classList.add('wide');
   document.getElementById('c_k').value=o.k;document.getElementById('c_t').value=o.t||'';document.getElementById('c_d').value=o.day;
   document.getElementById('c_s').value=hm(o.s);document.getElementById('c_e').value=hm(o.e);document.getElementById('c_n').value=o.note||'';
   document.querySelector('input[name=c_c][value="'+(o.c||0)+'"]').checked=true;
-  cuCount();culRefresh();
+  document.getElementById('c_sl').checked=!!o.sl;
+  cuCount();culRefresh();calKind();
+}
+/* Il tipo cambia il modulo: Lezione e Accesso libero scalano sempre una lezione ai presenti; l'Evento ha i partecipanti e la scelta "Scala una lezione" (spenta di default). */
+function calKind(){
+  var k=document.getElementById('c_k').value,sb=document.getElementById('c_slbox'),t=document.getElementById('c_t');
+  if(sb)sb.style.display=k==='evento'?'flex':'none';
+  if(t)t.placeholder=k==='evento'?'es. Open day, Workshop…':k==='accesso'?'Accesso libero (facoltativo)':'es. Yoga, Spinning…';
 }
 async function saveCalForm(){
   var k=document.getElementById('c_k').value,t=document.getElementById('c_t').value.trim(),day=document.getElementById('c_d').value,s=tmin(document.getElementById('c_s').value),e=tmin(document.getElementById('c_e').value);
-  if(k==='lezione'&&!t){document.getElementById('c_t').focus();st('c_st','Scrivi il titolo della lezione.');return}
+  if((k==='lezione'||k==='evento')&&!t){document.getElementById('c_t').focus();st('c_st',k==='evento'?'Scrivi il titolo dell’evento.':'Scrivi il titolo della lezione.');return}
   if(!day){st('c_st','Scegli la data.');return}
   if(s==null||e==null||e<=s){st('c_st','L’ora di fine deve essere dopo quella di inizio.');return}
   var cc=document.querySelector('input[name=c_c]:checked');
-  var o={t:t||(k==='accesso'?'Accesso libero':''),k:k,day:day,s:s,e:e,c:cc?+cc.value:0,note:document.getElementById('c_n').value.trim(),u:Object.keys(fsel)};
+  var o={t:t||(k==='accesso'?'Accesso libero':''),k:k,day:day,s:s,e:e,c:cc?+cc.value:0,note:document.getElementById('c_n').value.trim(),u:Object.keys(fsel),sl:k==='evento'&&document.getElementById('c_sl').checked};
   var b=document.getElementById('c_sv');b.disabled=true;b.textContent='Salvataggio…';
   try{
     if(fid){await saveC(findC(fid),o)}
@@ -1278,6 +1288,7 @@ document.addEventListener('input',function(e){
 });
 document.addEventListener('change',function(e){
   var t=e.target,u=t.getAttribute&&t.getAttribute('data-cu');
+  if(t.id==='c_k'){calKind();return}
   if(u!=null&&u!==''){if(t.checked)fsel[u]=1;else delete fsel[u];cuCount()}
 });
 document.addEventListener('click',function(e){
@@ -1895,7 +1906,7 @@ async function autoIng(){
   autoBusy=true;
   try{
     var n=new Date(),key=iso(n)+' '+hm(n.getHours()*60+n.getMinutes()),changed=false;
-    var L=CAL.filter(function(it){return (it.day+' '+hm(it.s))<=key}).sort(function(a,b){return (a.day+hm(a.s)).localeCompare(b.day+hm(b.s))});
+    var L=CAL.filter(function(it){return (it.k!=='evento'||it.sl)&&(it.day+' '+hm(it.s))<=key}).sort(function(a,b){return (a.day+hm(a.s)).localeCompare(b.day+hm(b.s))});
     for(var i=0;i<L.length;i++){
       var it=L[i],done=(it.sc||[]).map(String),todo=(it.u||[]).map(String).filter(function(u){return done.indexOf(u)<0&&find(u)});
       if(!todo.length)continue;
