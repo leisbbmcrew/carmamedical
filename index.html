@@ -1342,7 +1342,7 @@ document.addEventListener('click',function(e){
   var cd=e.target.closest('[data-cd]');
   if(cd){goDay(cd.getAttribute('data-cd'));return}
   var ci=e.target.closest('[data-ci]');
-  if(ci){calForm(ci.getAttribute('data-ci'));return}
+  if(ci){calMenu(ci.getAttribute('data-ci'));return}
   var col=e.target.closest('.col');
   if(col){var y=e.clientY-col.getBoundingClientRect().top,s=Math.max(0,Math.min(23*60,Math.floor(y/HH*2)*30));calForm(null,{day:col.getAttribute('data-day'),s:s,e:Math.min(1440,s+60)})}
 });
@@ -1422,6 +1422,25 @@ function durTxt(a,b){
   if(!b)return '';var m=tmin(b)-tmin(a);if(isNaN(m)||m<=0)return '';
   var h=Math.floor(m/60),mm=m%60;return (h?h+' h':'')+(h&&mm?' ':'')+(mm?mm+' min':'');
 }
+/* Click su una voce del calendario: modifica la voce e, per ogni utente presente, accesso rapido a anagrafica, schede (anche per crearne una nuova) e ingressi. */
+function calMenu(id){
+  var it=findC(id);if(!it)return;
+  var us=(it.u||[]).map(function(x){return find(x)}).filter(Boolean);
+  if(!us.length){calForm(id);return}
+  var btn=function(act,i,t,sm){return '<button data-act="'+act+'" data-id="'+esc(i)+'"><span>'+t+(sm?'<small>'+sm+'</small>':'')+'</span><i>›</i></button>'};
+  modal('<h3>'+esc(ctitle(it))+'</h3><div class="status">'+esc(fdate(it.day))+' · '+hm(it.s)+'–'+hm(it.e)+'</div>'+
+   '<div class="umenu">'+btn('cm_edit',id,'Modifica voce','Orario, tipo, partecipanti, note')+'</div>'+
+   us.map(function(u){
+     var s=schedeOf(u.id).length,np=pacOf(u.id).length,n=ingOf(u.id).length;
+     return '<b style="font-size:14px;margin-top:6px">'+esc(uname(u))+'</b><div class="umenu">'+
+      btn('cm_ana',u.id,'Anagrafica','Dati personali, documenti, note')+
+      btn('cm_sch',u.id,'Schede allenamento',s?s+(s===1?' scheda':' schede'):'Nessuna scheda')+
+      btn('cm_new',u.id,'Nuova scheda','Crea una scheda per questo utente')+
+      btn('cm_ing',u.id,'Ingressi',np?restUser(u.id)+' ingressi rimasti':n?n+' ingressi registrati':'Nessun pacchetto')+'</div>';
+   }).join('')+
+   '<div class="mrow"><button data-act="mclose">Chiudi</button></div>');
+}
+function calGoIng(id){closeModal();cur='utenti';iuid=String(id);idm=false;isel={};render();window.scrollTo(0,0)}
 function openUserMenu(id){
   var u=find(id);if(!u)return;
   var s=schedeOf(id).length,n=ingOf(id).length,np=pacOf(id).length,i=esc(u.id);
@@ -1623,6 +1642,11 @@ document.addEventListener('click',function(e){
   var a=e.target.closest('[data-act]');
   if(a){var k=a.getAttribute('data-act'),id=a.getAttribute('data-id');
     if(k==='pk_unsel'){delete psel[String(id)];pkRefresh()}
+    else if(k==='cm_edit'){closeModal();calForm(id)}
+    else if(k==='cm_ana')openUser(id);
+    else if(k==='cm_sch')goSchede(id);
+    else if(k==='cm_new'){goSchede(id);schedaForm()}
+    else if(k==='cm_ing')calGoIng(id);
     else if(k==='um_ana')openUser(id);
     else if(k==='um_edit')userForm(id);
     else if(k==='um_sch')goSchede(id);
