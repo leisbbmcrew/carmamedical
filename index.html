@@ -1233,13 +1233,40 @@ async function saveCalForm(){
   var cc=document.querySelector('input[name=c_c]:checked');
   var o={t:t||(k==='accesso'?'Accesso libero':''),k:k,day:day,s:s,e:e,c:cc?+cc.value:0,note:document.getElementById('c_n').value.trim(),u:Object.keys(fsel),sl:k==='evento'&&document.getElementById('c_sl').checked};
   var b=document.getElementById('c_sv');b.disabled=true;b.textContent='Salvataggio…';
+  var prevU=fid&&findC(fid)?(findC(fid).u||[]).map(String):[],cidSv=fid;
   try{
     if(fid){await saveC(findC(fid),o)}
     else if(dbCal){await dbCal.add(o)}
     else{o.id='c'+(++cuid);CAL.push(o)}
     await pmSave();
     calD=parseIso(day);closeModal();drawCal();autoIng();
+    /* utente tolto quando la lezione gli era già stata scalata (da 1 ora prima dell'inizio): chiedo se restituirla */
+    var rem=cidSv?prevU.filter(function(x){return o.u.indexOf(x)<0&&findI('auto_'+cidSv+'_'+x)}):[];
+    if(rem.length)askRecupero(cidSv,rem);
   }catch(err){b.disabled=false;b.textContent='Salva';st('c_st','Salvataggio non riuscito. Riprova.')}
+}
+var recPend=null;
+function askRecupero(cid,ids){
+  recPend={cid:String(cid),ids:ids.slice()};
+  var nm=ids.map(function(x){var u=find(x);return u?uname(u):'Utente'});
+  modal('<h3>Restituire la lezione?</h3><p>'+(nm.length===1?esc(nm[0])+' è stato tolto da questa voce quando gli era già stata scalata una lezione.':esc(nm.join(', '))+' sono stati tolti da questa voce quando era già stata scalata una lezione a ciascuno.')+'</p><p>Vuoi '+(nm.length===1?'fargli recuperare':'far recuperare')+' l’ingresso scalato?</p>'+
+   '<div class="mrow"><button data-act="mclose">No, lascia scalato</button><button class="pri" data-act="rec_yes">Sì, restituisci</button></div>');
+}
+async function recuperaIng(){
+  var p=recPend;recPend=null;if(!p)return;
+  delErr=null;delOff=false;
+  for(var i=0;i<p.ids.length;i++){
+    var iid='auto_'+p.cid+'_'+p.ids[i];
+    if(!findI(iid))continue;
+    var ok=dbIng?await delDoc(dbIng,iid):true;
+    if(ok)ING=ING.filter(function(x){return x.id!==iid});
+  }
+  var it=findC(p.cid);
+  if(it)await saveC(it,{sc:(it.sc||[]).map(String).filter(function(x){return p.ids.indexOf(x)<0})});
+  updBadge();
+  if(cur==='home'||cur==='avvisi')render();
+  else if(cur==='utenti'&&iuid&&document.getElementById('ilist'))listIng();
+  delEnd();
 }
 async function delCal(id){
   if(dbCal){if(!await delDoc(dbCal,id)){delFail();return}}
@@ -1642,6 +1669,7 @@ document.addEventListener('click',function(e){
   var a=e.target.closest('[data-act]');
   if(a){var k=a.getAttribute('data-act'),id=a.getAttribute('data-id');
     if(k==='pk_unsel'){delete psel[String(id)];pkRefresh()}
+    else if(k==='rec_yes')recuperaIng();
     else if(k==='cm_edit'){closeModal();calForm(id)}
     else if(k==='cm_ana')openUser(id);
     else if(k==='cm_sch')goSchede(id);
@@ -1942,10 +1970,11 @@ document.addEventListener('click',function(e){
   if(r){var i2=r.getAttribute('data-erow');if(evm){if(esel[i2])delete esel[i2];else esel[i2]=1;listEv()}else evDetail(i2)}
 });
 
-// ---- Scalare le lezioni: quando arriva l'orario di una voce del calendario, per ogni utente assegnato si registra
+// ---- Scalare le lezioni: 1 ora prima dell'orario di una voce del calendario (ANTICIPO_MIN), per ogni utente assegnato si registra
 // in automatico un ingresso che scala una lezione dal pacchetto (il più vecchio con lezioni rimaste).
 // La voce ricorda gli utenti già conteggiati (sc), così non si scala due volte.
 var rdy={}, autoBusy=false;
+var ANTICIPO_MIN=60;   /* minuti prima dell'inizio in cui la lezione viene scalata */
 async function addAutoIng(it,uid){
   var id='auto_'+it.id+'_'+uid;
   if(findI(id))return;
@@ -1958,7 +1987,7 @@ async function autoIng(){
   if(dbCal&&!(rdy.cal&&rdy.ing&&rdy.pac&&rdy.u))return;
   autoBusy=true;
   try{
-    var n=new Date(),key=iso(n)+' '+hm(n.getHours()*60+n.getMinutes()),changed=false;
+    var n=new Date(Date.now()+ANTICIPO_MIN*60000),key=iso(n)+' '+hm(n.getHours()*60+n.getMinutes()),changed=false;   /* la lezione si scala ANTICIPO_MIN minuti prima dell'inizio */
     var L=CAL.filter(function(it){return (it.k!=='evento'||it.sl)&&(it.day+' '+hm(it.s))<=key}).sort(function(a,b){return (a.day+hm(a.s)).localeCompare(b.day+hm(b.s))});
     for(var i=0;i<L.length;i++){
       var it=L[i],done=(it.sc||[]).map(String),todo=(it.u||[]).map(String).filter(function(u){return done.indexOf(u)<0&&find(u)});
