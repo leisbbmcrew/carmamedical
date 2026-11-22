@@ -539,11 +539,13 @@ function userForm(id){
   var u=id?find(id):null; if(id&&!u)return;
   draft={front:null,back:null};
   var fields=FIELDS.map(function(x){return '<label>'+x[1]+(x[0]==='n'||x[0]==='c'?' *':'')+'<input id="f_'+x[0]+'" type="'+(x[2]||'text')+'"></label>'}).join('')+
-   '<label>Note riservate (visibili solo a te)<textarea id="f_nt" placeholder="Compaiono nell’area note delle nuove schede; scegli tu se stamparle."></textarea></label>';
+   '<label>Note riservate (visibili solo a te)<textarea id="f_nt" placeholder="Compaiono nell’area note delle nuove schede; scegli tu se stamparle."></textarea></label>'+
+   '<label>Comunicazioni da fare (promemoria solo tuo)<textarea id="f_cm" placeholder="Cosa devi dire o ricordare a questo utente. Ti viene riproposto a ogni lezione."></textarea></label>';
   if(u){
     modal('<h3>Modifica anagrafica</h3>'+fields+'<div class="status" id="sstat"></div><div class="mrow"><button data-act="mclose">Annulla</button><button class="pri" id="bsave" data-act="msave" data-id="'+esc(u.id)+'">Salva</button></div>');
     FIELDS.forEach(function(x){document.getElementById('f_'+x[0]).value=u[x[0]]||''});
     document.getElementById('f_nt').value=u.nt||'';
+    document.getElementById('f_cm').value=u.cm||'';
     return;
   }
   modal('<h3>Nuovo utente</h3><div class="idbox"><b>Documento d’identità</b>'+
@@ -706,7 +708,7 @@ async function saveUser(go,editId){
   var o={}; FIELDS.forEach(function(x){o[x[0]]=document.getElementById('f_'+x[0]).value.trim()});
   if(!o.n||!o.c){document.getElementById(o.n?'f_c':'f_n').focus();return}
   o.cf=o.cf.toUpperCase();
-  o.nt=document.getElementById('f_nt').value.trim();
+  o.nt=document.getElementById('f_nt').value.trim();o.cm=document.getElementById('f_cm').value.trim();
   var bs=document.getElementById('bsave'),bp=document.getElementById('bsavepk');
   function lock(on){if(bs){bs.disabled=on;bs.textContent=on&&!go?'Salvataggio…':'Salva'}if(bp){bp.disabled=on;bp.textContent=on&&go?'Salvataggio…':'Aggiungi pacchetti'}}
   if(editId){
@@ -1167,11 +1169,37 @@ function culHtml(){
   }).join('');
 }
 function culRefresh(){var l=document.getElementById('c_ul');if(l)l.innerHTML=culHtml()}
-function cuCount(){st('c_uc','Utenti presenti ('+Object.keys(fsel).length+')')}
+function cuCount(){st('c_uc','Utenti presenti ('+Object.keys(fsel).length+')');pmRender()}
+/* Promemoria per utente: note riservate e comunicazioni da fare. Sono quelle salvate nell'anagrafica e si riaprono a ogni inserimento; se le modifichi qui, si aggiornano anche lì. */
+var pmEdit={};
+function pmGrab(){[].forEach.call(document.querySelectorAll('#c_pm [data-pm]'),function(t){var p=t.getAttribute('data-pm').split(':');(pmEdit[p[1]]=pmEdit[p[1]]||{})[p[0]]=t.value})}
+function pmRender(){
+  var host=document.getElementById('c_pm');if(!host)return;
+  pmGrab();
+  host.innerHTML=Object.keys(fsel).map(function(id){
+    var u=find(id);if(!u)return '';var e=pmEdit[id]||{};
+    var nt=e.nt!=null?e.nt:(u.nt||''),cm=e.cm!=null?e.cm:(u.cm||'');
+    return '<div style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px"><b style="font-size:14px">'+esc(uname(u))+'</b>'+
+      '<label>Note riservate (solo tue)<textarea data-pm="nt:'+esc(id)+'" style="min-height:56px">'+esc(nt)+'</textarea></label>'+
+      '<label>Comunicazioni da fare<textarea data-pm="cm:'+esc(id)+'" style="min-height:56px">'+esc(cm)+'</textarea></label></div>';
+  }).join('');
+}
+async function pmSave(){
+  pmGrab();
+  var ids=Object.keys(fsel);
+  for(var i=0;i<ids.length;i++){
+    var u=find(ids[i]),e=pmEdit[ids[i]];if(!u||!e)continue;
+    var p={};
+    if(e.nt!=null&&e.nt.trim()!==(u.nt||''))p.nt=e.nt.trim();
+    if(e.cm!=null&&e.cm.trim()!==(u.cm||''))p.cm=e.cm.trim();
+    if(!Object.keys(p).length)continue;
+    try{if(dbCol)await dbCol.doc(String(u.id)).update(p);Object.keys(p).forEach(function(k){u[k]=p[k]})}catch(err){}
+  }
+}
 function calForm(id,pre){
   var it=id?findC(id):null;fid=it?it.id:null;
   var o=it||Object.assign({k:'lezione',t:'',day:iso(calD),s:540,e:600,c:2,note:'',u:[]},pre||{});
-  fsel={};(o.u||[]).forEach(function(x){fsel[String(x)]=1});
+  fsel={};pmEdit={};(o.u||[]).forEach(function(x){fsel[String(x)]=1});
   modal('<h3>'+(it?'Modifica voce':'Nuova voce')+'</h3>'+
    '<label>Tipo<select id="c_k"><option value="lezione">Lezione</option><option value="evento">Evento</option><option value="accesso">Accesso libero in palestra</option></select></label>'+
    '<label>Titolo<input id="c_t" type="text" placeholder="es. Yoga, Spinning…"></label>'+
@@ -1181,7 +1209,7 @@ function calForm(id,pre){
    '<label>Note<input id="c_n" type="text"></label>'+
    '<label id="c_slbox" style="flex-direction:row;align-items:center;gap:8px;font-size:14px;color:var(--text);display:none"><input type="checkbox" id="c_sl"> Scala una lezione ai partecipanti</label>'+
    '<div id="c_ubox" style="display:flex;flex-direction:column;gap:8px"><b id="c_uc" style="font-size:14px;margin-top:4px"></b>'+
-   '<input class="search" id="c_q" type="search" placeholder="Cerca utente…" style="margin:0"><div class="cul" id="c_ul"></div></div>'+
+   '<input class="search" id="c_q" type="search" placeholder="Cerca utente…" style="margin:0"><div class="cul" id="c_ul"></div></div><div id="c_pm" style="display:flex;flex-direction:column;gap:10px"></div>'+
    '<div class="status" id="c_st"></div>'+
    '<div class="mrow">'+(it?'<button class="danger" data-act="c_del" data-id="'+esc(it.id)+'" style="margin-right:auto">Elimina</button>':'')+'<button data-act="mclose">Annulla</button><button class="pri" id="c_sv" data-act="c_save">Salva</button></div>');
   document.querySelector('#modal .mbox').classList.add('wide');
@@ -1209,6 +1237,7 @@ async function saveCalForm(){
     if(fid){await saveC(findC(fid),o)}
     else if(dbCal){await dbCal.add(o)}
     else{o.id='c'+(++cuid);CAL.push(o)}
+    await pmSave();
     calD=parseIso(day);closeModal();drawCal();autoIng();
   }catch(err){b.disabled=false;b.textContent='Salva';st('c_st','Salvataggio non riuscito. Riprova.')}
 }
